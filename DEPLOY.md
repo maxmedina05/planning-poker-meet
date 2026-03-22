@@ -149,6 +149,50 @@ info. Voting UI arrives in Phase 2.
 
 ---
 
+## Firebase Setup (Phase 3+)
+
+### Create the Firebase project
+
+1. Go to [console.firebase.google.com](https://console.firebase.google.com)
+2. Click **Add project** → select your existing `planning-poker-meet` GCP project
+3. Follow the prompts (disable Analytics if you don't need it)
+
+### Create a Realtime Database
+
+1. In your Firebase project → **Build → Realtime Database → Create database**
+2. Choose a region close to you
+3. Start in **test mode** (open rules — fine for now, tighten in production)
+
+### Set security rules
+
+1. In Realtime Database → **Rules** tab
+2. Replace the contents with the rules from `firebase-rules.json` in this repo
+3. Click **Publish**
+
+### Get your Firebase config
+
+1. In Firebase → **Project settings** (gear icon) → **Your apps**
+2. Click **Add app → Web**, register it (nickname: `planning-poker-meet`)
+3. Copy the `firebaseConfig` object — it looks like:
+   ```json
+   {
+     "apiKey": "AIza...",
+     "authDomain": "....firebaseapp.com",
+     "databaseURL": "https://...-default-rtdb.firebaseio.com",
+     "projectId": "...",
+     "storageBucket": "....appspot.com",
+     "messagingSenderId": "...",
+     "appId": "..."
+   }
+   ```
+
+### Add as GitHub Actions secret
+
+1. Go to repo **Settings → Secrets and variables → Actions**
+2. Add new secret: name `FIREBASE_CONFIG`, value = the JSON object above (no variable name, just the `{...}` object)
+
+---
+
 ## Updating the Add-on
 
 Since the add-on loads its pages from GitHub Pages at runtime, **most updates
