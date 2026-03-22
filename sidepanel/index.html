@@ -8,10 +8,33 @@
 </head>
 <body>
   <div id="app">
+
     <div id="loading">Connecting to meeting...</div>
+
     <div id="main" hidden>
-      <!-- Phase 2: card grid goes here -->
-      <p class="placeholder">Side panel ready. Voting UI coming in Phase 2.</p>
+
+      <header class="panel-header">
+        <span class="panel-title">🃏 Planning Poker</span>
+      </header>
+
+      <!-- Voting view: pick a card and confirm -->
+      <div id="voting-view">
+        <!-- Phase 4: story title replaces this placeholder -->
+        <p class="story-title" id="story-title">Waiting for host to start a round...</p>
+        <p class="section-label">Pick your card:</p>
+        <div class="card-grid" id="card-grid"></div>
+        <button class="confirm-btn" id="confirm-btn" disabled>✓ &nbsp;Confirm Vote</button>
+      </div>
+
+      <!-- Voted view: shows after confirming -->
+      <div id="voted-view" hidden>
+        <p class="section-label">Your vote:</p>
+        <div class="voted-display">
+          <div class="card card--voted" id="voted-card"></div>
+        </div>
+        <button class="change-btn" id="change-btn">Change Vote</button>
+      </div>
+
     </div>
   </div>
 
