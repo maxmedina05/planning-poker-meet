@@ -25,6 +25,8 @@ jobs:
           CLOUD_PROJECT_NUMBER: ${{ secrets.CLOUD_PROJECT_NUMBER }}
         run: |
           echo "const CONFIG = { cloudProjectNumber: '${CLOUD_PROJECT_NUMBER}' };" > config.js
+          echo "--- generated config.js ---"
+          cat config.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
