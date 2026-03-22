@@ -57,7 +57,13 @@
   }
 
   // ── Firebase init ─────────────────────────────────────────────────────────
-  firebase.initializeApp(CONFIG.firebase);
+  try {
+    firebase.initializeApp(CONFIG.firebase);
+  } catch (err) {
+    loadingEl.textContent = 'Firebase init failed: ' + (err.message || String(err));
+    console.error('[PlanningPoker] Firebase error:', err);
+    return;
+  }
   const db      = firebase.database();
   const roomRef = db.ref('rooms/' + meetingId);
 

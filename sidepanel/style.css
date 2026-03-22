@@ -2,6 +2,9 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Ensure the hidden attribute always wins over display: flex rules */
+[hidden] { display: none !important; }
+
 body {
   font-family: 'Google Sans', Roboto, sans-serif;
   font-size: 14px;
