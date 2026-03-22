@@ -17,22 +17,34 @@
         <span class="panel-title">🃏 Planning Poker</span>
       </header>
 
-      <!-- Voting view: pick a card and confirm -->
+      <!-- View 1: pick a card and confirm -->
       <div id="voting-view">
-        <!-- Phase 4: story title replaces this placeholder -->
+        <!-- Phase 4: story title set by host replaces this -->
         <p class="story-title" id="story-title">Waiting for host to start a round...</p>
         <p class="section-label">Pick your card:</p>
         <div class="card-grid" id="card-grid"></div>
         <button class="confirm-btn" id="confirm-btn" disabled>✓ &nbsp;Confirm Vote</button>
       </div>
 
-      <!-- Voted view: shows after confirming -->
+      <!-- View 2: vote submitted, waiting for others -->
       <div id="voted-view" hidden>
         <p class="section-label">Your vote:</p>
         <div class="voted-display">
           <div class="card card--voted" id="voted-card"></div>
         </div>
-        <button class="change-btn" id="change-btn">Change Vote</button>
+        <p class="vote-count" id="vote-count"></p>
+        <div class="voted-actions">
+          <button class="change-btn" id="change-btn">Change Vote</button>
+          <button class="reveal-btn" id="reveal-btn">Reveal Votes</button>
+        </div>
+      </div>
+
+      <!-- View 3: votes revealed -->
+      <div id="revealed-view" hidden>
+        <p class="section-label">Results</p>
+        <div class="results-grid" id="results-grid"></div>
+        <div class="results-stats" id="results-stats"></div>
+        <button class="new-round-btn" id="new-round-btn">Start New Round</button>
       </div>
 
     </div>

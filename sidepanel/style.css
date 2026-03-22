@@ -53,16 +53,7 @@ body {
   color: #202124;
 }
 
-/* ── Voting view ──────────────────────────────────────────────────────────── */
-
-#voting-view {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  gap: 12px;
-  overflow-y: auto;
-}
+/* ── Shared ───────────────────────────────────────────────────────────────── */
 
 .story-title {
   font-size: 13px;
@@ -79,7 +70,16 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ── Card grid ────────────────────────────────────────────────────────────── */
+/* ── View 1: Voting ───────────────────────────────────────────────────────── */
+
+#voting-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+}
 
 .card-grid {
   display: grid;
@@ -103,7 +103,6 @@ body {
   user-select: none;
   padding: 0;
   line-height: 1;
-  /* Constrain emoji scaling to match number cards */
   overflow: hidden;
 }
 
@@ -123,8 +122,6 @@ body {
   color: #1a73e8;
   box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
 }
-
-/* ── Confirm button ───────────────────────────────────────────────────────── */
 
 .confirm-btn {
   width: 100%;
@@ -147,15 +144,10 @@ body {
   cursor: default;
 }
 
-.confirm-btn:not(:disabled):hover {
-  background: #1557b0;
-}
+.confirm-btn:not(:disabled):hover { background: #1557b0; }
+.confirm-btn:not(:disabled):active { background: #0d47a1; }
 
-.confirm-btn:not(:disabled):active {
-  background: #0d47a1;
-}
-
-/* ── Voted view ───────────────────────────────────────────────────────────── */
+/* ── View 2: Voted ────────────────────────────────────────────────────────── */
 
 #voted-view {
   flex: 1;
@@ -164,7 +156,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  gap: 20px;
+  gap: 16px;
 }
 
 .voted-display {
@@ -188,18 +180,111 @@ body {
   box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
 }
 
+.vote-count {
+  font-size: 13px;
+  color: #5f6368;
+  min-height: 18px;
+}
+
+.voted-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.reveal-btn {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.reveal-btn:hover { background: #1557b0; }
+.reveal-btn:active { background: #0d47a1; }
+
 .change-btn {
+  width: 100%;
   background: none;
   border: 1px solid #dadce0;
   border-radius: 8px;
   color: #1a73e8;
   font-size: 14px;
   font-weight: 500;
-  padding: 9px 20px;
+  padding: 9px;
   cursor: pointer;
   transition: background 0.12s;
 }
 
-.change-btn:hover {
-  background: #f8f9fa;
+.change-btn:hover { background: #f8f9fa; }
+
+/* ── View 3: Revealed ─────────────────────────────────────────────────────── */
+
+#revealed-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+  overflow-y: auto;
 }
+
+.results-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-card {
+  width: 44px;
+  aspect-ratio: 2 / 3;
+  border: 1.5px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #202124;
+}
+
+.result-card--mine {
+  border-color: #1a73e8;
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.results-stats {
+  font-size: 13px;
+  color: #5f6368;
+  min-height: 18px;
+}
+
+.results-stats strong {
+  color: #202124;
+}
+
+.new-round-btn {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.new-round-btn:hover { background: #1557b0; }
+.new-round-btn:active { background: #0d47a1; }
