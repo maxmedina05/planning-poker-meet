@@ -51,7 +51,7 @@
     const sidePanelClient = await session.createSidePanelClient();
     const meetingInfo = await sidePanelClient.getMeetingInfo();
     meetingId = meetingInfo.meetingId;
-    console.log('[PlanningPoker] Meeting ID:', meetingId);
+    console.log('[PlanningPoker] Connected to meeting.');
   } catch (err) {
     loadingEl.textContent = err && err.errorType
       ? 'SDK error: ' + err.errorType
@@ -63,6 +63,16 @@
   // ── Firebase init ─────────────────────────────────────────────────────────
   try {
     firebase.initializeApp(CONFIG.firebase);
+    // App Check: cryptographically proves requests come from this app/domain.
+    // Requires RECAPTCHA_SITE_KEY secret and App Check enabled in Firebase Console.
+    // If the key is absent (local dev without the secret), App Check is skipped.
+    if (CONFIG.recaptchaSiteKey) {
+      const appCheck = firebase.appCheck();
+      appCheck.activate(
+        new firebase.appCheck.ReCaptchaV3Provider(CONFIG.recaptchaSiteKey),
+        true // auto-refresh tokens
+      );
+    }
   } catch (err) {
     loadingEl.textContent = 'Firebase init failed: ' + (err.message || String(err));
     console.error('[PlanningPoker] Firebase error:', err);
@@ -74,9 +84,8 @@
   const hostRef    = roomRef.child('hostId');
   const storyRef   = roomRef.child('storyTitle');
 
-  // ── Claim host: first writer wins ─────────────────────────────────────────
+  // ── Claim host: first writer wins ────────────────────────────────────────
   hostRef.transaction(currentHostId => {
-    // Only set if no host exists yet
     return currentHostId === null ? myId : undefined;
   });
 
@@ -102,6 +111,8 @@
   }
 
   function confirmVote() {
+    // Only write values that are valid card faces — reject anything else
+    if (!CARDS.includes(selectedCard)) return;
     confirmedCard = selectedCard;
     roomRef.child('votes/' + myId).set(confirmedCard);
   }
@@ -255,9 +266,9 @@
       const avg = numeric.reduce((a, b) => a + b, 0) / numeric.length;
       const min = Math.min(...numeric);
       const max = Math.max(...numeric);
-      resultsStats.innerHTML = min === max
-        ? 'Avg: <strong>' + avg.toFixed(1) + '</strong> &nbsp;·&nbsp; Consensus! 🎉'
-        : 'Avg: <strong>' + avg.toFixed(1) + '</strong> &nbsp;·&nbsp; Range: <strong>' + min + '–' + max + '</strong>';
+      resultsStats.textContent = min === max
+        ? 'Avg: ' + avg.toFixed(1) + ' · Consensus! 🎉'
+        : 'Avg: ' + avg.toFixed(1) + ' · Range: ' + min + '–' + max;
     } else {
       resultsStats.textContent = '';
     }

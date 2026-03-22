@@ -329,12 +329,9 @@ body {
 
 .results-stats {
   font-size: 13px;
-  color: #5f6368;
-  min-height: 18px;
-}
-
-.results-stats strong {
+  font-weight: 500;
   color: #202124;
+  min-height: 18px;
 }
 
 .new-round-btn {

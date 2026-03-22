@@ -24,10 +24,10 @@ jobs:
         env:
           CLOUD_PROJECT_NUMBER: ${{ secrets.CLOUD_PROJECT_NUMBER }}
           FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
         run: |
-          echo "const CONFIG = { cloudProjectNumber: '${CLOUD_PROJECT_NUMBER}', firebase: ${FIREBASE_CONFIG} };" > config.js
-          echo "--- generated config.js (firebase keys redacted) ---"
-          node -e "const c = require('./config.js'); console.log('cloudProjectNumber:', c.CONFIG ? 'set' : 'missing', '| firebase.projectId:', c.CONFIG?.firebase?.projectId ?? 'missing');" 2>/dev/null || cat config.js
+          echo "const CONFIG = { cloudProjectNumber: '${CLOUD_PROJECT_NUMBER}', recaptchaSiteKey: '${RECAPTCHA_SITE_KEY}', firebase: ${FIREBASE_CONFIG} };" > config.js
+          echo "config.js generated — $(wc -c < config.js) bytes"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
