@@ -8,7 +8,7 @@
   const loadingEl = document.getElementById('loading');
   const mainEl    = document.getElementById('main');
 
-  if (typeof window.meet === 'undefined') {
+  if (typeof window.meet === 'undefined' || !new URLSearchParams(window.location.search).has('meet_sdk')) {
     loadingEl.textContent = 'Open this page inside Google Meet to use Planning Poker.';
     return;
   }

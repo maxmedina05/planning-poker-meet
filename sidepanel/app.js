@@ -8,8 +8,9 @@
   const loadingEl = document.getElementById('loading');
   const mainEl    = document.getElementById('main');
 
-  // Dev guard: SDK is only injected inside actual Meet
-  if (typeof window.meet === 'undefined') {
+  // Dev guard: SDK requires a meet_sdk URL param injected by Meet's iframe loader.
+  // Opening this page directly in a browser will always fail at createAddonSession.
+  if (typeof window.meet === 'undefined' || !new URLSearchParams(window.location.search).has('meet_sdk')) {
     loadingEl.textContent = 'Open this page inside Google Meet to use Planning Poker.';
     return;
   }
