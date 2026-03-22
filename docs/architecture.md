@@ -12,62 +12,100 @@ All code is static HTML/CSS/JS hosted on GitHub Pages. No server required.
 
 ---
 
-### 2. Side Panel + Main Stage Split
+### 2. Side Panel Only
 
-The Meet add-on model provides two frames:
+The Meet add-on model provides two frames — side panel and main stage. We use
+only the side panel. All voting, reveal, and results happen there.
 
-| Frame | Our Use |
-|-------|---------|
-| **Side panel** | Each participant's private voting UI. Always visible. Entry point via `sidePanelUrl`. |
-| **Main stage** | Shared reveal screen. Opened by the host via `startActivity({ mainStageUrl })`. |
-
-The side panel is loaded from `sidePanelUrl` in the manifest as soon as the
-add-on is opened. The main stage is optional and only launched when the host
-starts a voting round.
+The main stage files (`mainstage/`) are scaffolded but unused. They exist in case
+a future version wants a shared full-screen results view.
 
 ---
 
-### 3. Real-time Sync: Co-Doing API
+### 3. Real-time Sync: Firebase Realtime Database
 
-> "The Co-Doing API is used to synchronize arbitrary data between meeting
-> participants."
-> — [Implement the Co-Doing API](https://developers.google.com/workspace/meet/add-ons/guides/use-CoDoingAPI)
+Firebase Realtime Database is used to sync game state across all participants
+in real time. The `meetingId` from the Meet SDK is used as the room key so
+each meeting gets its own isolated state.
 
-**No backend needed.** The Co-Doing API broadcasts game state to all
-participants through Meet's infrastructure.
-
-State is serialized as `Uint8Array`:
-
-```javascript
-// Encode
-const bytes = new TextEncoder().encode(JSON.stringify(state));
-coDoingClient.broadcastStateUpdate({ bytes });
-
-// Decode
-const state = JSON.parse(new TextDecoder().decode(coDoingState.bytes));
+**Why not the Co-Doing API?**
+The Co-Doing API (`session.createCoDoingClient`) requires EAP (Early Access
+Program) enrollment and is not available to new add-ons:
+```
+Meet Add-on SDK error: Could not connect to co channel.
+The addon does not have permission to open a co.
+This method might require EAP enrollment.
 ```
 
-The `onCoDoingStateChanged` callback fires on every participant's client
-whenever any participant broadcasts an update.
+Firebase was chosen as the replacement:
+- Free tier (Spark plan) is sufficient for any team size
+- Client SDK loads from CDN — no build step
+- State persists so late joiners receive the current round state immediately
+- `meetingId` as the room key provides natural isolation between meetings
+
+**Firebase state shape:**
+```json
+{
+  "hostId": "abc123",
+  "storyTitle": "User SSO login",
+  "revealed": false,
+  "votes": {
+    "abc123": "5",
+    "def456": "8"
+  }
+}
+```
+
+**Writes:**
+- Each participant writes only their own vote: `rooms/{meetingId}/votes/{myId}`
+- Facilitator writes `revealed`, `storyTitle`, `hostId`, and resets `votes`
+- `roomRef.on('value')` fires for all participants (including the writer) on every change
 
 ---
 
-### 4. No Backend (Phases 1–3)
+### 4. Participant Identity
 
-All state lives in the Co-Doing API during the meeting. There is no persistence
-between meetings. A backend would only be needed for vote history / audit trails
-— out of scope for this project.
+The Meet SDK does not expose participant IDs or names. Each participant
+generates a random ID on first load and stores it in `localStorage`:
+
+```javascript
+let myId = localStorage.getItem('poker_id');
+if (!myId) {
+  myId = Math.random().toString(36).slice(2, 11);
+  localStorage.setItem('poker_id', myId);
+}
+```
+
+`localStorage` persists across panel close/reopen (same browser, same origin).
+This ensures a participant's vote is not orphaned if they close and reopen the panel.
+
+Edge case: clearing browser storage or using a different browser generates a
+new ID. The previous vote remains in Firebase under the old ID. The participant
+can still vote again — their new vote appears as an additional entry.
 
 ---
 
-### 5. Manifest Deployment: HTTP Deployment
+### 5. Host / Facilitator Detection
+
+There is no "meeting host" concept in the Meet add-ons SDK. Facilitator role
+is tracked in Firebase:
+
+- First participant to open the add-on claims `hostId` via a Firebase transaction
+  (atomic: only sets if currently null)
+- If `myId === hostId`, the participant sees facilitator controls
+- Any participant can overwrite `hostId` via the "Claim Facilitator" button
+  (handles the case where the facilitator leaves mid-session)
+
+---
+
+### 6. Manifest Deployment: HTTP Deployment
 
 The manifest (`deployment.json`) is submitted as JSON in:
 **Google Cloud Console → APIs & Services → Google Workspace Marketplace SDK
 → HTTP deployments tab**
 
-This is preferred over the Apps Script deployment path since we have no Apps
-Script project.
+The manifest only needs re-submission when URLs or origins change. All
+code changes are picked up automatically from GitHub Pages at runtime.
 
 ---
 
@@ -76,112 +114,102 @@ Script project.
 ### SDK Loading (CDN)
 
 ```html
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<!-- Meet Add-ons -->
 <script src="https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js"></script>
 ```
 
-Exposes `window.meet.addon` globally.
-
-### Session Initialization
+### Meet Session Initialization
 
 ```javascript
 const session = await window.meet.addon.createAddonSession({
-  cloudProjectNumber: 'YOUR_CLOUD_PROJECT_NUMBER',  // number, not project ID
+  cloudProjectNumber: CONFIG.cloudProjectNumber,
 });
-```
-
-**Important:** Use the **Project Number** from Cloud Console → IAM & Admin →
-Settings. It is a 12-digit integer, not the project ID string.
-
-Stored in `config.js` at the repo root (loaded before `app.js` in each HTML
-file). This value is a **public identifier** — it is visible in browser source
-and safe to commit. It is not an API secret.
-
----
-
-## Secrets Policy
-
-This is a static site. There is no server to hold secrets at runtime.
-
-| Value | Where it lives | Commit? |
-|-------|---------------|---------|
-| `cloudProjectNumber` | `config.js` | ✅ Yes — public identifier |
-| Firebase API key (future) | `config.js` | ✅ Yes — restricted by domain in Firebase console |
-| Service account JSON (future) | Backend only, never in repo | ❌ No |
-| OAuth client secret (future) | Backend only, never in repo | ❌ No |
-
-`.gitignore` blocks `*.json` credential files, `.env` files, and `*.pem`/`*.key`.
-
-### Client Objects
-
-```javascript
-// In sidepanel/app.js
 const sidePanelClient = await session.createSidePanelClient();
-
-// In mainstage/app.js
-const mainStageClient = await session.createMainStageClient();
+const meetingInfo = await sidePanelClient.getMeetingInfo();
+// meetingInfo.meetingId   — used as Firebase room key
+// meetingInfo.meetingCode — human-readable "aaa-bbbb-ccc"
 ```
 
-Using the wrong client for the wrong frame will throw an exception. Never call
-`createMainStageClient()` from the side panel or vice versa.
+**Important:** `cloudProjectNumber` is the 12-digit **Project Number** from
+Cloud Console → IAM & Admin → Settings. It is not the Project ID string.
 
-### Meeting Info
+### Dev Guard
+
+The SDK requires a `meet_sdk` URL parameter that Meet injects into the iframe.
+Opening the page directly in a browser will not have this parameter:
 
 ```javascript
-const info = await sidePanelClient.getMeetingInfo();
-// info.meetingId   — globally unique identifier
-// info.meetingCode — human-readable "aaa-bbbb-ccc" format
+if (typeof window.meet === 'undefined' ||
+    !new URLSearchParams(window.location.search).has('meet_sdk')) {
+  loadingEl.textContent = 'Open this page inside Google Meet.';
+  return;
+}
 ```
 
----
-
-## Activity Lifecycle (Phases 3+)
-
-1. Host calls `sidePanelClient.startActivity({ mainStageUrl, additionalData })`
-2. All participants receive an invitation notification
-3. Joining participants call `mainStageClient.getActivityStartingState()` to
-   read `additionalData` and initialize their state
-4. Co-Doing API syncs votes in real time
-5. Host calls `sidePanelClient.endActivity()` to close the main stage for everyone
-
----
-
-## Frame-to-Frame Messaging
-
-Used for side panel ↔ main stage communication **within the same participant's
-session only** (not cross-participant):
+### Firebase Initialization
 
 ```javascript
-// Side panel → main stage
-await sidePanelClient.notifyMainStage(JSON.stringify(payload));
-
-// Main stage → side panel
-await mainStageClient.notifySidePanel(JSON.stringify(payload));
-
-// Receive
-client.on('frameToFrameMessage', (msg) => {
-  const payload = JSON.parse(msg.payload ?? msg);
-});
+firebase.initializeApp(CONFIG.firebase);
+const db      = firebase.database();
+const roomRef = db.ref('rooms/' + meetingId);
 ```
-
-Delivery is best-effort (attempted once). The receiving frame must be open.
 
 ---
 
-## Origin / CORS Strategy
+## Secrets and Config
 
-- **Development:** Use a fixed GitHub Pages URL (`https://USERNAME.github.io/REPO`)
-  pinned in `deployment.dev.json`
-- **Production:** Same pattern, different repo or branch if needed
+`config.js` is gitignored and generated by GitHub Actions at deploy time.
+It is never committed to the repository.
 
-Never use broad wildcards like `*.github.io` in `addOnOrigins`. Use the exact
-origin of your deployed site.
+| Value | Where it lives | Commit? | Notes |
+|-------|---------------|---------|-------|
+| `cloudProjectNumber` | GitHub Actions secret → `config.js` | No | Public identifier, but kept out of git history for hygiene |
+| Firebase config (apiKey, etc.) | GitHub Actions secret → `config.js` | No | Designed to be public; security enforced by Firebase Rules |
+| Service account / backend keys | Never in this repo | No | Would require a backend, which this project doesn't have |
 
-Two manifest files for the two environments:
+For local development: copy `config.example.js` → `config.js` and fill in values.
 
+---
+
+## Firebase Security Rules
+
+```json
+{
+  "rules": {
+    "rooms": {
+      "$meetingId": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
 ```
-deployment.json         # current active manifest
-deployment.prod.json    # production (keep in sync manually)
+
+Open read/write scoped to the `rooms` collection. Tighter per-participant
+rules were attempted but blocked the facilitator's `newRound()` operation
+(which resets the `votes` node directly). Full auth-based rules would require
+Firebase Authentication — out of scope for this project.
+
+The `meetingId` format (`spaces/xxxx`) is not easily guessable, providing
+implicit isolation between meetings.
+
+---
+
+## CSS `[hidden]` Override
+
+All views use the HTML `hidden` attribute to toggle visibility. Because views
+use `display: flex` in CSS, the browser's built-in `[hidden] { display: none }`
+rule is overridden. The fix is applied globally:
+
+```css
+[hidden] { display: none !important; }
 ```
+
+Without this line, all views render simultaneously.
 
 ---
 
@@ -192,19 +220,18 @@ deployment.prod.json    # production (keep in sync manually)
   "addOns": {
     "common": {
       "name": "Planning Poker",
-      "logoUrl": "HTTPS_URL_TO_48x48_PNG"
+      "logoUrl": "https://maxmedina05.github.io/planning-poker-meet/assets/logo.png"
     },
     "meet": {
       "web": {
-        "sidePanelUrl": "https://HOST/sidepanel/index.html",
+        "sidePanelUrl": "https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html",
         "supportsScreenSharing": false,
-        "addOnOrigins": ["https://HOST"],
-        "logoUrl": "HTTPS_URL_TO_48x48_PNG"
+        "addOnOrigins": ["https://maxmedina05.github.io"],
+        "logoUrl": "https://maxmedina05.github.io/planning-poker-meet/assets/logo.png"
       }
     }
   }
 }
 ```
 
-`supportsScreenSharing` is `false` — voting is private per participant.
-Revisit in Phase 4.
+`supportsScreenSharing: false` — voting is private per participant.

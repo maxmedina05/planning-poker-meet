@@ -2,24 +2,8 @@
   "rules": {
     "rooms": {
       "$meetingId": {
-        "hostId": {
-          ".read": true,
-          ".write": true
-        },
-        "storyTitle": {
-          ".read": true,
-          ".write": true
-        },
-        "revealed": {
-          ".read": true,
-          ".write": true
-        },
-        "votes": {
-          ".read": true,
-          "$participantId": {
-            ".write": true
-          }
-        }
+        ".read": true,
+        ".write": true
       }
     }
   }

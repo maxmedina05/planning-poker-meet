@@ -9,6 +9,7 @@ Google Meet. Follow the sections in order.
 
 - A Google account (personal or Workspace)
 - Access to [Google Cloud Console](https://console.cloud.google.com)
+- Access to [Firebase Console](https://console.firebase.google.com)
 - Git installed locally
 - The repo cloned: `git clone https://github.com/maxmedina05/planning-poker-meet`
 
@@ -20,7 +21,7 @@ Google Meet. Follow the sections in order.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com)
 2. Click the project dropdown at the top → **New Project**
-3. Name it `planning-poker-meet` (or anything you'll recognize)
+3. Name it `planning-poker-meet` (or anything you'll recognise)
 4. Click **Create**
 
 ### 1.2 Get Your Project Number
@@ -34,146 +35,50 @@ Google Meet. Follow the sections in order.
 Go to **APIs & Services → Library** and enable these two (search by name):
 
 1. **Google Workspace Marketplace SDK**
-   > ⚠️ Do **not** enable "Google Workspace Marketplace API" — that's different.
+   > ⚠️ Do **not** enable "Google Workspace Marketplace API" — that's a different thing.
 2. **Google Workspace Add-ons API**
 
 ---
 
-## Part 2 — Configure the Project
+## Part 2 — Firebase Setup
 
-### 2.1 Set Your Cloud Project Number as a GitHub Secret
-
-`config.js` is gitignored and generated automatically at deploy time.
-Your project number never appears in the repo history.
-
-1. Go to https://github.com/maxmedina05/planning-poker-meet
-2. Click **Settings → Secrets and variables → Actions**
-3. Click **New repository secret**
-4. Name: `CLOUD_PROJECT_NUMBER`
-5. Value: your 12-digit project number (e.g. `123456789012`)
-6. Click **Add secret**
-
-For local development only, copy `config.example.js` to `config.js` and fill it
-in manually. It is gitignored so it will never be committed.
-
-### 2.2 Verify deployment.json
-
-`deployment.json` is already set to the correct GitHub Pages URLs:
-
-```json
-"sidePanelUrl": "https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html"
-"addOnOrigins": ["https://maxmedina05.github.io"]
-```
-
-No changes needed unless you move to a different host.
-
----
-
-## Part 3 — Publish to GitHub Pages
-
-### 3.1 Add a Logo
-
-The manifest requires a publicly accessible logo image.
-
-1. Add a PNG file at `assets/logo.png` (minimum 48×48px)
-2. Commit and push it
-
-### 3.2 Enable GitHub Pages via GitHub Actions
-
-1. Go to https://github.com/maxmedina05/planning-poker-meet
-2. Click **Settings → Pages**
-3. Under **Source**, select **GitHub Actions** (not "Deploy from a branch")
-4. Click **Save**
-
-### 3.3 Push to Deploy
-
-Every push to `main` now triggers the deploy workflow automatically:
-
-```bash
-git add .
-git commit -m "Initial scaffold"
-git push origin main
-```
-
-Watch the deploy at:
-**https://github.com/maxmedina05/planning-poker-meet/actions**
-
-Once the workflow is green, visit:
-`https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html`
-
-You should see "Open this page inside Google Meet to use Planning Poker."
-
----
-
-## Part 4 — Register the Add-on
-
-### 4.1 Open the Marketplace SDK
-
-In Google Cloud Console:
-**APIs & Services → Google Workspace Marketplace SDK**
-
-### 4.2 Create a Deployment
-
-1. Click the **HTTP deployments** tab
-2. Click **Create new deployment**
-3. Enter a deployment ID, e.g. `planning-poker-dev`
-4. Click **Next**
-5. Paste the full contents of `deployment.json` into the manifest field
-6. Click **Submit** (or **Create**)
-
-### 4.3 Install the Add-on for Your Account
-
-On the HTTP deployments tab, find your deployment and click **Install** under
-the Actions column.
-
-> This installs it only for your Google account. No Marketplace listing or
-> approval process required.
-
----
-
-## Part 5 — Test It in Meet
-
-1. Go to [meet.google.com](https://meet.google.com) and start a new meeting
-2. Click the **Activities** panel — the puzzle-piece icon in the bottom-right
-3. You should see **Planning Poker** listed under your add-ons
-4. Click it — the side panel should open
-5. Open your browser's developer console (F12) and confirm you see:
-
-   ```
-   [PlanningPoker] Meeting ID: <some-id>
-   [PlanningPoker] Meeting code: aaa-bbbb-ccc
-   ```
-
-**Phase 1 is working.** The side panel connects to the SDK and retrieves meeting
-info. Voting UI arrives in Phase 2.
-
----
-
-## Firebase Setup (Phase 3+)
-
-### Create the Firebase project
+### 2.1 Add Firebase to Your Project
 
 1. Go to [console.firebase.google.com](https://console.firebase.google.com)
-2. Click **Add project** → select your existing `planning-poker-meet` GCP project
-3. Follow the prompts (disable Analytics if you don't need it)
+2. Click **Add project** → select your existing Google Cloud project
+3. Follow the prompts (you can disable Analytics)
 
-### Create a Realtime Database
+### 2.2 Create a Realtime Database
 
-1. In your Firebase project → **Build → Realtime Database → Create database**
+1. In Firebase → **Build → Realtime Database → Create database**
 2. Choose a region close to you
-3. Start in **test mode** (open rules — fine for now, tighten in production)
+3. Start in **test mode** — you'll set real rules in the next step
 
-### Set security rules
+### 2.3 Set Security Rules
 
 1. In Realtime Database → **Rules** tab
-2. Replace the contents with the rules from `firebase-rules.json` in this repo
+2. Replace the contents with:
+   ```json
+   {
+     "rules": {
+       "rooms": {
+         "$meetingId": {
+           ".read": true,
+           ".write": true
+         }
+       }
+     }
+   }
+   ```
+   (This is also in `firebase-rules.json` in the repo)
 3. Click **Publish**
 
-### Get your Firebase config
+### 2.4 Register a Web App and Get the Config
 
 1. In Firebase → **Project settings** (gear icon) → **Your apps**
-2. Click **Add app → Web**, register it (nickname: `planning-poker-meet`)
-3. Copy the `firebaseConfig` object — it looks like:
+2. Click **Add app → Web (</> icon)**
+3. Register it with nickname `planning-poker-meet`
+4. Copy the `firebaseConfig` object — it looks like:
    ```json
    {
      "apiKey": "AIza...",
@@ -186,24 +91,116 @@ info. Voting UI arrives in Phase 2.
    }
    ```
 
-### Add as GitHub Actions secret
+---
 
-1. Go to repo **Settings → Secrets and variables → Actions**
-2. Add new secret: name `FIREBASE_CONFIG`, value = the JSON object above (no variable name, just the `{...}` object)
+## Part 3 — GitHub Secrets
+
+`config.js` is gitignored and generated by GitHub Actions at deploy time.
+Add two repository secrets so the workflow can build it.
+
+1. Go to https://github.com/maxmedina05/planning-poker-meet
+2. Click **Settings → Secrets and variables → Actions**
+3. Add these two secrets:
+
+| Name | Value |
+|------|-------|
+| `CLOUD_PROJECT_NUMBER` | Your 12-digit Google Cloud project number |
+| `FIREBASE_CONFIG` | The Firebase config JSON object (just the `{...}`, no variable name) |
+
+> For local development: copy `config.example.js` → `config.js` and fill in values.
+> It is gitignored and will never be committed.
+
+---
+
+## Part 4 — Publish to GitHub Pages
+
+### 4.1 Add a Logo
+
+The manifest requires a publicly accessible logo image.
+
+1. Add a PNG file at `assets/logo.png` (minimum 48×48px)
+2. Commit and push it
+
+### 4.2 Enable GitHub Pages via GitHub Actions
+
+1. Go to the repo → **Settings → Pages**
+2. Under **Source**, select **GitHub Actions** (not "Deploy from a branch")
+3. Click **Save**
+
+### 4.3 Push to Deploy
+
+Every push to `main` triggers the deploy workflow automatically:
+
+```bash
+git add .
+git commit -m "Initial deploy"
+git push origin main
+```
+
+Watch the deploy at:
+**https://github.com/maxmedina05/planning-poker-meet/actions**
+
+Once the workflow is green, visit:
+`https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html`
+
+You should see: "Open this page inside Google Meet to use Planning Poker."
+
+---
+
+## Part 5 — Register the Add-on
+
+### 5.1 Open the Marketplace SDK
+
+In Google Cloud Console:
+**APIs & Services → Google Workspace Marketplace SDK**
+
+### 5.2 Create a Deployment
+
+1. Click the **HTTP deployments** tab
+2. Click **Create new deployment**
+3. Enter a deployment ID, e.g. `planning-poker-dev`
+4. Click **Next**
+5. Paste the full contents of `deployment.json` into the manifest field
+6. Click **Submit**
+
+### 5.3 Install the Add-on for Your Account
+
+On the HTTP deployments tab, find your deployment and click **Install** under
+the Actions column.
+
+> This installs it only for your Google account. No Marketplace listing or
+> approval process required. To share with a team, use domain-wide install via
+> Google Workspace Admin, or have each person install it individually.
+
+---
+
+## Part 6 — Test It in Meet
+
+1. Go to [meet.google.com](https://meet.google.com) and start a new meeting
+2. Click the **Activities** panel (puzzle-piece icon, bottom right)
+3. You should see **Planning Poker** listed
+4. Click it — the side panel opens
+5. The first person to open the add-on becomes the **Facilitator**
+6. Open a second browser window with another Google account and join the same meeting
+7. Both windows open Planning Poker — test the full voting flow:
+   - Both participants pick a card and confirm
+   - Vote count updates live in both panels
+   - Facilitator clicks **Reveal Votes** — both panels show results
+   - Facilitator clicks **Start New Round** — both panels reset
 
 ---
 
 ## Updating the Add-on
 
-Since the add-on loads its pages from GitHub Pages at runtime, **most updates
-don't require re-registering the manifest**.
+Most updates are a `git push` — no manifest re-submission needed.
 
 | Change | What to do |
 |--------|-----------|
-| HTML / CSS / JS changes | `git push` — live within ~1 min |
-| New URL (sidePanelUrl, mainStageUrl) | Update `deployment.json`, re-submit manifest in Cloud Console |
+| HTML / CSS / JS changes | `git push` → live within ~1 min via Actions |
+| Version bump | Increment `VERSION` in `sidepanel/app.js`, `git push` |
+| New URL (sidePanelUrl) | Update `deployment.json`, re-submit manifest in Cloud Console |
 | New origin | Add to `addOnOrigins` in `deployment.json`, re-submit |
-| Config change (project number) | Update `config.js`, `git push` |
+| Firebase or GCP config change | Update GitHub secret, trigger a new Actions run |
 
 ---
 
@@ -211,22 +208,12 @@ don't require re-registering the manifest**.
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Add-on not visible in Activities panel | Not installed | Complete Part 4.3 |
-| "Connecting to meeting…" never changes | Wrong project number or APIs not enabled | Check `config.js` and Part 1.3 |
-| Console error: `CONFIG is not defined` | `config.js` not loading | Confirm `../config.js` script tag is in the HTML |
-| Logo shows as broken image | Image not pushed or wrong path | Verify the logo URL loads directly in a browser |
+| Add-on not visible in Activities panel | Not installed | Complete Part 5.3 |
+| "Connecting to meeting…" never changes | `config.js` failed to load or parse | Check Actions log for the Generate step; verify both secrets are set |
+| Firebase permission denied in console | Security rules not published | Re-publish rules from Part 2.3 |
+| Old version still showing in Meet | Browser cache | Hard refresh: `Ctrl+Shift+R` / `Cmd+Shift+R` |
+| Logo shows as broken image | Image not pushed or wrong path | Verify `assets/logo.png` loads at the GitHub Pages URL |
 | Cross-origin error in console | Deployed URL doesn't match `addOnOrigins` | Check `deployment.json` origin matches your GitHub Pages URL exactly |
 | Page loads but SDK does nothing | Opened outside Meet | The SDK only activates inside an actual Meet session |
-| `CONFIG is not defined` on deployed site | GitHub secret not set or Actions deploy failed | Check Actions tab for errors; verify `CLOUD_PROJECT_NUMBER` secret exists |
-
----
-
-## Phase Checklist
-
-As each phase is completed, the corresponding functionality becomes available
-after a `git push`.
-
-- [x] **Phase 1** — Side panel opens, SDK initialises, meeting ID logs to console
-- [ ] **Phase 2** — Card grid, card selection, confirm vote button
-- [ ] **Phase 3** — Real-time vote sync, reveal mechanic, results view
-- [ ] **Phase 4** — Host controls, story title, new round, reset
+| `CONFIG is not defined` on deployed site | GitHub secret missing or Actions failed | Check Actions tab; verify `CLOUD_PROJECT_NUMBER` and `FIREBASE_CONFIG` secrets exist |
+| Only one panel resets on New Round | Stale code before bug fix | Hard refresh both windows |
