@@ -15,12 +15,25 @@
 
       <header class="panel-header">
         <span class="panel-title">🃏 Planning Poker</span>
+        <span class="host-badge" id="host-badge" hidden>Facilitator</span>
       </header>
+
+      <!-- Story title: editable for host, read-only for participants -->
+      <div class="story-bar">
+        <input
+          type="text"
+          id="story-input"
+          class="story-input"
+          placeholder="Story title (optional)…"
+          maxlength="120"
+          hidden
+        >
+        <p class="story-display" id="story-display" hidden></p>
+        <button class="claim-btn" id="claim-btn" hidden>Claim Facilitator</button>
+      </div>
 
       <!-- View 1: pick a card and confirm -->
       <div id="voting-view">
-        <!-- Phase 4: story title set by host replaces this -->
-        <p class="story-title" id="story-title">Waiting for host to start a round...</p>
         <p class="section-label">Pick your card:</p>
         <div class="card-grid" id="card-grid"></div>
         <button class="confirm-btn" id="confirm-btn" disabled>✓ &nbsp;Confirm Vote</button>
@@ -35,7 +48,8 @@
         <p class="vote-count" id="vote-count"></p>
         <div class="voted-actions">
           <button class="change-btn" id="change-btn">Change Vote</button>
-          <button class="reveal-btn" id="reveal-btn">Reveal Votes</button>
+          <!-- Host only -->
+          <button class="reveal-btn" id="reveal-btn" hidden>Reveal Votes</button>
         </div>
       </div>
 
@@ -44,16 +58,15 @@
         <p class="section-label">Results</p>
         <div class="results-grid" id="results-grid"></div>
         <div class="results-stats" id="results-stats"></div>
-        <button class="new-round-btn" id="new-round-btn">Start New Round</button>
+        <!-- Host only -->
+        <button class="new-round-btn" id="new-round-btn" hidden>Start New Round</button>
       </div>
 
     </div>
   </div>
 
-  <!-- Firebase Realtime Database SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-  <!-- Meet add-ons SDK -->
   <script src="https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js"></script>
   <script src="../config.js"></script>
   <script src="app.js"></script>

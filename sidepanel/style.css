@@ -45,25 +45,88 @@ body {
 /* ── Header ───────────────────────────────────────────────────────────────── */
 
 .panel-header {
-  padding: 14px 16px 10px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f1f3f4;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .panel-title {
   font-size: 15px;
   font-weight: 600;
   color: #202124;
+  flex: 1;
+}
+
+.host-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a73e8;
+  background: #e8f0fe;
+  border-radius: 10px;
+  padding: 2px 8px;
+  letter-spacing: 0.2px;
+}
+
+/* ── Story bar ────────────────────────────────────────────────────────────── */
+
+.story-bar {
+  padding: 8px 16px;
+  border-bottom: 1px solid #f1f3f4;
+  flex-shrink: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.story-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: #202124;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.story-input::placeholder {
+  color: #bdc1c6;
+}
+
+.story-input:focus {
+  border-bottom: 1.5px solid #1a73e8;
+}
+
+.story-display {
+  font-size: 13px;
+  color: #202124;
+  font-style: italic;
+  flex: 1;
+}
+
+.claim-btn {
+  font-size: 11px;
+  font-weight: 500;
+  color: #5f6368;
+  background: none;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.claim-btn:hover {
+  background: #f8f9fa;
+  color: #202124;
 }
 
 /* ── Shared ───────────────────────────────────────────────────────────────── */
-
-.story-title {
-  font-size: 13px;
-  color: #5f6368;
-  font-style: italic;
-  min-height: 18px;
-}
 
 .section-label {
   font-size: 12px;
@@ -147,7 +210,7 @@ body {
   cursor: default;
 }
 
-.confirm-btn:not(:disabled):hover { background: #1557b0; }
+.confirm-btn:not(:disabled):hover  { background: #1557b0; }
 .confirm-btn:not(:disabled):active { background: #0d47a1; }
 
 /* ── View 2: Voted ────────────────────────────────────────────────────────── */
@@ -209,7 +272,7 @@ body {
   transition: background 0.12s;
 }
 
-.reveal-btn:hover { background: #1557b0; }
+.reveal-btn:hover  { background: #1557b0; }
 .reveal-btn:active { background: #0d47a1; }
 
 .change-btn {
@@ -289,5 +352,5 @@ body {
   flex-shrink: 0;
 }
 
-.new-round-btn:hover { background: #1557b0; }
+.new-round-btn:hover  { background: #1557b0; }
 .new-round-btn:active { background: #0d47a1; }

@@ -8,6 +8,10 @@
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const loadingEl    = document.getElementById('loading');
   const mainEl       = document.getElementById('main');
+  const hostBadge    = document.getElementById('host-badge');
+  const storyInput   = document.getElementById('story-input');
+  const storyDisplay = document.getElementById('story-display');
+  const claimBtn     = document.getElementById('claim-btn');
   const votingView   = document.getElementById('voting-view');
   const votedView    = document.getElementById('voted-view');
   const revealedView = document.getElementById('revealed-view');
@@ -22,7 +26,6 @@
   const resultsStats = document.getElementById('results-stats');
 
   // ── Participant identity ──────────────────────────────────────────────────
-  // localStorage persists across panel close/reopen for the same origin.
   let myId = localStorage.getItem('poker_id');
   if (!myId) {
     myId = Math.random().toString(36).slice(2, 11);
@@ -31,6 +34,7 @@
 
   let confirmedCard = null;
   let selectedCard  = null;
+  let isHost        = false;
 
   // ── Meet SDK init ─────────────────────────────────────────────────────────
   if (typeof window.meet === 'undefined' || !new URLSearchParams(window.location.search).has('meet_sdk')) {
@@ -48,10 +52,9 @@
     meetingId = meetingInfo.meetingId;
     console.log('[PlanningPoker] Meeting ID:', meetingId);
   } catch (err) {
-    const msg = err && err.errorType
+    loadingEl.textContent = err && err.errorType
       ? 'SDK error: ' + err.errorType
       : 'Failed to connect: ' + (err.message || String(err));
-    loadingEl.textContent = msg;
     console.error('[PlanningPoker] Init error:', err);
     return;
   }
@@ -64,8 +67,17 @@
     console.error('[PlanningPoker] Firebase error:', err);
     return;
   }
-  const db      = firebase.database();
-  const roomRef = db.ref('rooms/' + meetingId);
+
+  const db         = firebase.database();
+  const roomRef    = db.ref('rooms/' + meetingId);
+  const hostRef    = roomRef.child('hostId');
+  const storyRef   = roomRef.child('storyTitle');
+
+  // ── Claim host: first writer wins ─────────────────────────────────────────
+  hostRef.transaction(currentHostId => {
+    // Only set if no host exists yet
+    return currentHostId === null ? myId : undefined;
+  });
 
   // ── Render card grid ──────────────────────────────────────────────────────
   CARDS.forEach(value => {
@@ -90,7 +102,6 @@
 
   function confirmVote() {
     confirmedCard = selectedCard;
-    // Write only our own vote — Firebase merges, no overwrite risk
     roomRef.child('votes/' + myId).set(confirmedCard);
   }
 
@@ -106,31 +117,53 @@
   function newRound() {
     confirmedCard = null;
     selectedCard  = null;
-    roomRef.set({ revealed: false, votes: {} });
-    // Switch view immediately for the initiator — the Firebase listener
-    // won't catch this because confirmedCard is already null by the time it fires
+    // Preserve hostId and storyTitle across rounds
+    roomRef.update({ revealed: false, votes: {} });
     showVotingView();
+  }
+
+  function claimHost() {
+    hostRef.set(myId);
   }
 
   confirmBtn.addEventListener('click', confirmVote);
   changeBtn.addEventListener('click', changeVote);
   revealBtn.addEventListener('click', revealVotes);
   newRoundBtn.addEventListener('click', newRound);
+  claimBtn.addEventListener('click', claimHost);
+
+  // Story title: update Firebase on blur (not on every keystroke)
+  storyInput.addEventListener('blur', () => {
+    storyRef.set(storyInput.value.trim());
+  });
+  // Also save on Enter key
+  storyInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') storyInput.blur();
+  });
 
   // ── Real-time listener ────────────────────────────────────────────────────
-  // Fires for all participants (including ourselves) on every state change.
   roomRef.on('value', snapshot => {
-    const state = snapshot.val() || { revealed: false, votes: {} };
-    const votes = state.votes || {};
+    const state    = snapshot.val() || {};
+    const votes    = state.votes    || {};
+    const hostId   = state.hostId   || null;
+    const revealed = state.revealed || false;
+    const title    = state.storyTitle || '';
 
-    if (state.revealed) {
+    // Update host status
+    isHost = (myId === hostId);
+    applyHostUI(isHost, hostId);
+
+    // Update story title
+    applyStoryTitle(title);
+
+    if (revealed) {
       showRevealedView(votes);
       return;
     }
 
     const myVote = votes[myId];
 
-    // Another participant started a new round — reset our local state
+    // New round was started by host — reset local state
     if (!myVote && confirmedCard !== null) {
       confirmedCard = null;
       selectedCard  = null;
@@ -147,12 +180,35 @@
     }
   });
 
+  // ── Host UI ───────────────────────────────────────────────────────────────
+  function applyHostUI(host, hostId) {
+    hostBadge.hidden    = !host;
+    storyInput.hidden   = !host;
+    storyDisplay.hidden = host;
+    // Show claim button only if someone else is host (hostId exists but isn't me)
+    claimBtn.hidden     = host || hostId === null;
+    revealBtn.hidden    = !host;
+    newRoundBtn.hidden  = !host;
+  }
+
+  function applyStoryTitle(title) {
+    // Don't overwrite what the host is actively typing
+    if (document.activeElement !== storyInput) {
+      storyInput.value = title;
+    }
+    storyDisplay.textContent = title;
+    storyDisplay.hidden = isHost || !title;
+  }
+
   // ── View switching ────────────────────────────────────────────────────────
   function showVotingView() {
     votingView.hidden   = false;
     votedView.hidden    = true;
     revealedView.hidden = true;
     confirmBtn.disabled = selectedCard === null;
+    // Reset card highlights
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('card--selected'));
+    selectedCard = null;
   }
 
   function showVotedView(votes) {
