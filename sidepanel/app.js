@@ -2,6 +2,7 @@
 // Docs: https://developers.google.com/workspace/meet/add-ons/guides/overview
 
 (async function () {
+  const VERSION = '1.0.0';
   const CARDS   = ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'];
   const NUMERIC = new Set(['0', '1', '2', '3', '5', '8', '13', '21']);
 
@@ -263,6 +264,7 @@
   }
 
   // ── Show UI ───────────────────────────────────────────────────────────────
+  document.querySelector('.panel-title').textContent = '🃏 Planning Poker v' + VERSION;
   loadingEl.hidden = true;
   mainEl.hidden    = false;
 
