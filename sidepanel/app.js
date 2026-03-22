@@ -1,8 +1,9 @@
 // Planning Poker — Side Panel
 // Docs: https://developers.google.com/workspace/meet/add-ons/guides/overview
+// Config loaded from ../config.js (CONFIG.cloudProjectNumber)
 
 (async function () {
-  const CLOUD_PROJECT_NUMBER = 'YOUR_CLOUD_PROJECT_NUMBER';
+  const CLOUD_PROJECT_NUMBER = CONFIG.cloudProjectNumber;
 
   const loadingEl = document.getElementById('loading');
   const mainEl    = document.getElementById('main');

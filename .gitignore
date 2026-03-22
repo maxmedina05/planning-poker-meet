@@ -1,0 +1,22 @@
+# --- Secrets — never commit these ---
+
+# Service account / backend credentials (future phases)
+service-account.json
+*-credentials.json
+*.pem
+*.key
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Firebase (if added later)
+.firebaserc
+firebase-debug.log
+
+# --- Editor / OS noise ---
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+*.swp

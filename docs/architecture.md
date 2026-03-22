@@ -92,6 +92,25 @@ const session = await window.meet.addon.createAddonSession({
 **Important:** Use the **Project Number** from Cloud Console → IAM & Admin →
 Settings. It is a 12-digit integer, not the project ID string.
 
+Stored in `config.js` at the repo root (loaded before `app.js` in each HTML
+file). This value is a **public identifier** — it is visible in browser source
+and safe to commit. It is not an API secret.
+
+---
+
+## Secrets Policy
+
+This is a static site. There is no server to hold secrets at runtime.
+
+| Value | Where it lives | Commit? |
+|-------|---------------|---------|
+| `cloudProjectNumber` | `config.js` | ✅ Yes — public identifier |
+| Firebase API key (future) | `config.js` | ✅ Yes — restricted by domain in Firebase console |
+| Service account JSON (future) | Backend only, never in repo | ❌ No |
+| OAuth client secret (future) | Backend only, never in repo | ❌ No |
+
+`.gitignore` blocks `*.json` credential files, `.env` files, and `*.pem`/`*.key`.
+
 ### Client Objects
 
 ```javascript
