@@ -106,8 +106,10 @@
   function newRound() {
     confirmedCard = null;
     selectedCard  = null;
-    // Reset the entire room atomically
     roomRef.set({ revealed: false, votes: {} });
+    // Switch view immediately for the initiator — the Firebase listener
+    // won't catch this because confirmedCard is already null by the time it fires
+    showVotingView();
   }
 
   confirmBtn.addEventListener('click', confirmVote);
