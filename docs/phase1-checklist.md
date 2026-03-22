@@ -35,14 +35,11 @@ In Google Cloud Console → **APIs & Services → Library**, enable both:
 
 ## Step 3 — Deploy Files to GitHub Pages
 
-1. Push this entire project to a GitHub repository
+1. Push this project to https://github.com/maxmedina05/planning-poker-meet
 2. Go to the repo → **Settings → Pages**
 3. Set source to **Deploy from a branch → `main` → `/ (root)`**
-4. Wait for deployment — your URL will be `https://USERNAME.github.io/REPO`
-5. Note this URL as your `HOST`
-
-> If you haven't set up the repo yet, skip to Step 4 and come back.
-> You can submit the manifest with the expected URL even before the site is live.
+4. Wait for deployment — your URL will be:
+   `https://maxmedina05.github.io/planning-poker-meet`
 
 ---
 
@@ -50,27 +47,12 @@ In Google Cloud Console → **APIs & Services → Library**, enable both:
 
 Replace `YOUR_HOST` in `deployment.json` with your actual GitHub Pages URL:
 
-```json
-{
-  "addOns": {
-    "common": {
-      "name": "Planning Poker",
-      "logoUrl": "https://USERNAME.github.io/REPO/assets/logo.png"
-    },
-    "meet": {
-      "web": {
-        "sidePanelUrl": "https://USERNAME.github.io/REPO/sidepanel/index.html",
-        "supportsScreenSharing": false,
-        "addOnOrigins": ["https://USERNAME.github.io"],
-        "logoUrl": "https://USERNAME.github.io/REPO/assets/logo.png"
-      }
-    }
-  }
-}
-```
+The `deployment.json` is already updated with the correct URLs:
+- `sidePanelUrl`: `https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html`
+- `addOnOrigins`: `["https://maxmedina05.github.io"]`
+- `logoUrl`: `https://maxmedina05.github.io/planning-poker-meet/assets/logo.png`
 
-> Note: `addOnOrigins` uses the root origin only, not the full path.
-> If your repo is at `github.io/REPO`, the origin is `https://USERNAME.github.io`.
+No changes needed — just ensure `deployment.json` is pushed to the repo.
 
 ---
 

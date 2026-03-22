@@ -45,9 +45,9 @@ deployment instructions.
 ## Hosting
 
 Served via **GitHub Pages** from the `main` branch root.
-Public URL: `https://YOUR_USERNAME.github.io/YOUR_REPO`
+- Repo: https://github.com/maxmedina05/planning-poker-meet
+- Public URL: `https://maxmedina05.github.io/planning-poker-meet`
 
-Replace `YOUR_USERNAME` and `YOUR_REPO` in:
-- `deployment.json` — all three URL fields
+Still needs updating in:
 - `sidepanel/app.js` — `CLOUD_PROJECT_NUMBER`
 - `mainstage/app.js` — `CLOUD_PROJECT_NUMBER`
