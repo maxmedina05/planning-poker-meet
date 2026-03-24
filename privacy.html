@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy — Planning Poker</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 680px;
+        margin: 48px auto;
+        padding: 0 24px;
+        color: #1f1f1f;
+        line-height: 1.7;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 4px;
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin-top: 2rem;
+      }
+      .updated {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+      }
+      ul {
+        padding-left: 1.4rem;
+      }
+      a {
+        color: #1a73e8;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: March 2026</p>
+
+    <p>
+      Planning Poker is a Google Meet add-on that helps teams estimate story
+      points during meetings. This policy explains what data is collected and
+      how it is handled.
+    </p>
+
+    <h2>What we collect</h2>
+    <ul>
+      <li>
+        <strong>Anonymous session ID:</strong> When you open the add-on,
+        Firebase Anonymous Authentication assigns you a randomly generated
+        unique ID (e.g. <code>abc123xyz</code>). This ID contains no personal
+        information — it is not linked to your name, email address, or Google
+        account.
+      </li>
+      <li>
+        <strong>Votes:</strong> The card value you submit during a session (e.g.
+        "5", "8", "?") is stored in Google Cloud Firestore under your anonymous
+        ID for the duration of the meeting.
+      </li>
+      <li>
+        <strong>Story title:</strong> If the facilitator enters a story title,
+        it is stored in Firestore for the duration of the session.
+      </li>
+    </ul>
+
+    <h2>What we do NOT collect</h2>
+    <ul>
+      <li>Your name, email address, or any Google account information</li>
+      <li>Your Google Meet meeting content, chat, or video</li>
+      <li>Any data beyond what is listed above</li>
+    </ul>
+
+    <h2>How data is stored and deleted</h2>
+    <p>
+      All session data is stored in Google Cloud Firestore (Google's
+      infrastructure). Each room document is automatically deleted 24 hours
+      after the last activity in that session via a Firestore TTL (Time-to-Live)
+      policy. No manual deletion is required.
+    </p>
+
+    <h2>Data sharing</h2>
+    <p>
+      We do not sell, share, or transfer any data to third parties. Data is
+      stored solely on Google Cloud infrastructure and is only accessible to
+      participants in the same meeting session.
+    </p>
+
+    <h2>Third-party services</h2>
+    <ul>
+      <li>
+        <strong>Google Firebase</strong> — Authentication and database. See
+        <a href="https://firebase.google.com/support/privacy" target="_blank"
+          >Firebase Privacy</a
+        >.
+      </li>
+      <li>
+        <strong>Google reCAPTCHA v3</strong> — Bot protection (App Check). See
+        <a href="https://policies.google.com/privacy" target="_blank"
+          >Google Privacy Policy</a
+        >.
+      </li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>
+      For privacy questions, contact:
+      <a href="mailto:maxmedina05@gmail.com">maxmedina05@gmail.com</a>
+    </p>
+  </body>
+</html>

@@ -8,7 +8,7 @@
 > build a full web app."
 > — [Deploy a Meet add-on](https://developers.google.com/workspace/meet/add-ons/guides/deploy-add-on)
 
-All code is static HTML/CSS/JS hosted on GitHub Pages. No server required.
+All code is static HTML/CSS/JS hosted on Firebase Hosting. No server required.
 
 ---
 
@@ -22,11 +22,12 @@ a future version wants a shared full-screen results view.
 
 ---
 
-### 3. Real-time Sync: Firebase Realtime Database
+### 3. Real-time Sync: Cloud Firestore
 
-Firebase Realtime Database is used to sync game state across all participants
-in real time. The `meetingId` from the Meet SDK is used as the room key so
-each meeting gets its own isolated state.
+Cloud Firestore is used to sync game state across all participants in real time.
+The `meetingId` from the Meet SDK is used as the document ID so each meeting
+gets its own isolated state. Documents auto-delete after 24 hours of inactivity
+via a Firestore TTL policy on the `expiresAt` field.
 
 **Why not the Co-Doing API?**
 The Co-Doing API (`session.createCoDoingClient`) requires EAP (Early Access
@@ -37,75 +38,99 @@ The addon does not have permission to open a co.
 This method might require EAP enrollment.
 ```
 
-Firebase was chosen as the replacement:
+Firestore was chosen as the backend:
 - Free tier (Spark plan) is sufficient for any team size
 - Client SDK loads from CDN — no build step
 - State persists so late joiners receive the current round state immediately
-- `meetingId` as the room key provides natural isolation between meetings
+- `meetingId` as the document key provides natural isolation between meetings
+- TTL policy auto-deletes stale rooms at no cost
 
-**Firebase state shape:**
+**Firestore document shape** — single document per room at `rooms/{meetingId}`:
 ```json
 {
-  "hostId": "abc123",
+  "hostId": "anon_uid_abc123",
   "storyTitle": "User SSO login",
   "revealed": false,
+  "expiresAt": "2026-03-25T14:30:00Z",
   "votes": {
-    "abc123": "5",
-    "def456": "8"
+    "anon_uid_abc123": "5",
+    "anon_uid_def456": "8"
   }
 }
 ```
 
 **Writes:**
-- Each participant writes only their own vote: `rooms/{meetingId}/votes/{myId}`
+- Each participant writes only their own vote: `votes.{myId}` field
 - Facilitator writes `revealed`, `storyTitle`, `hostId`, and resets `votes`
-- `roomRef.on('value')` fires for all participants (including the writer) on every change
+- Every write refreshes `expiresAt` to `now + 24h`
+- `roomDoc.onSnapshot()` fires for all participants on every change
 
 ---
 
-### 4. Participant Identity
+### 4. Participant Identity: Firebase Anonymous Auth
 
-The Meet SDK does not expose participant IDs or names. Each participant
-generates a random ID on first load and stores it in `localStorage`:
+Each participant is silently signed in with Firebase Anonymous Auth on load.
+The resulting UID is used as their identity throughout the session.
 
 ```javascript
-let myId = localStorage.getItem('poker_id');
-if (!myId) {
-  myId = Math.random().toString(36).slice(2, 11);
-  localStorage.setItem('poker_id', myId);
-}
+const userCredential = await firebase.auth().signInAnonymously();
+myId = userCredential.user.uid;
 ```
 
-`localStorage` persists across panel close/reopen (same browser, same origin).
-This ensures a participant's vote is not orphaned if they close and reopen the panel.
+Anonymous auth sessions persist across page reloads by default (IndexedDB),
+so a participant's vote is preserved if they close and reopen the side panel.
 
 Edge case: clearing browser storage or using a different browser generates a
-new ID. The previous vote remains in Firebase under the old ID. The participant
-can still vote again — their new vote appears as an additional entry.
+new UID. The previous vote remains in Firestore under the old UID. The
+participant can vote again — their new vote appears as an additional entry.
 
 ---
 
 ### 5. Host / Facilitator Detection
 
 There is no "meeting host" concept in the Meet add-ons SDK. Facilitator role
-is tracked in Firebase:
+is tracked in Firestore:
 
-- First participant to open the add-on claims `hostId` via a Firebase transaction
-  (atomic: only sets if currently null)
+- First participant to open the add-on claims `hostId` via a Firestore
+  transaction (atomic: only sets if document doesn't exist or `hostId` is null)
 - If `myId === hostId`, the participant sees facilitator controls
 - Any participant can overwrite `hostId` via the "Claim Facilitator" button
   (handles the case where the facilitator leaves mid-session)
 
 ---
 
-### 6. Manifest Deployment: HTTP Deployment
+### 6. Security Model
+
+**Authentication:** Firebase Anonymous Auth — all Firestore reads/writes
+require a valid auth token. Unauthenticated requests are rejected by rules.
+
+**Authorization (Firestore Security Rules):**
+- Any authenticated user can read any room
+- Any authenticated user can create a room (with valid schema)
+- Users can only write their own vote key (`votes.{uid}` validated against `request.auth.uid`)
+- Full reset (clearing `votes`) is allowed for any authenticated user
+- Vote map capped at 50 entries, `storyTitle` capped at 120 chars
+- `expiresAt` must be a timestamp; all required fields enforced on create
+
+**App Check (reCAPTCHA v3):** Proves requests originate from the legitimate
+app/domain. Rejects requests from unauthorized clients before rules are even evaluated.
+
+**Host action enforcement:** Reveal, reset, story title, and host claim are
+NOT server-enforced — any authenticated participant can perform them.
+This is an acceptable trade-off: all participants are in the same meeting
+and know each other. Adding Cloud Functions for host enforcement would add
+cost and complexity disproportionate to the threat.
+
+---
+
+### 7. Manifest Deployment: HTTP Deployment
 
 The manifest (`deployment.json`) is submitted as JSON in:
 **Google Cloud Console → APIs & Services → Google Workspace Marketplace SDK
 → HTTP deployments tab**
 
 The manifest only needs re-submission when URLs or origins change. All
-code changes are picked up automatically from GitHub Pages at runtime.
+code changes are picked up automatically from Firebase Hosting at runtime.
 
 ---
 
@@ -116,7 +141,9 @@ code changes are picked up automatically from GitHub Pages at runtime.
 ```html
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <!-- Meet Add-ons -->
 <script src="https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js"></script>
 ```
@@ -129,7 +156,7 @@ const session = await window.meet.addon.createAddonSession({
 });
 const sidePanelClient = await session.createSidePanelClient();
 const meetingInfo = await sidePanelClient.getMeetingInfo();
-// meetingInfo.meetingId   — used as Firebase room key
+// meetingInfo.meetingId   — used as Firestore document ID
 // meetingInfo.meetingCode — human-readable "aaa-bbbb-ccc"
 ```
 
@@ -153,8 +180,12 @@ if (typeof window.meet === 'undefined' ||
 
 ```javascript
 firebase.initializeApp(CONFIG.firebase);
-const db      = firebase.database();
-const roomRef = db.ref('rooms/' + meetingId);
+// Anonymous auth — must complete before any Firestore operations
+const userCredential = await firebase.auth().signInAnonymously();
+myId = userCredential.user.uid;
+// Firestore
+const db      = firebase.firestore();
+const roomDoc = db.collection('rooms').doc(meetingId);
 ```
 
 ---
@@ -166,36 +197,24 @@ It is never committed to the repository.
 
 | Value | Where it lives | Commit? | Notes |
 |-------|---------------|---------|-------|
-| `cloudProjectNumber` | GitHub Actions secret → `config.js` | No | Public identifier, but kept out of git history for hygiene |
-| Firebase config (apiKey, etc.) | GitHub Actions secret → `config.js` | No | Designed to be public; security enforced by Firebase Rules |
+| `cloudProjectNumber` | GitHub Actions secret → `config.js` | No | Public identifier, kept out of git for hygiene |
+| `recaptchaSiteKey` | GitHub Actions secret → `config.js` | No | reCAPTCHA v3 site key — public, but kept out of git for hygiene |
+| Firebase config (apiKey, etc.) | GitHub Actions secret → `config.js` | No | Designed to be public; security enforced by Firestore Rules + Auth + App Check |
+| `.firebaserc` (project ID) | Local only | No | Gitignored; copy from `.firebaserc.example` |
 | Service account / backend keys | Never in this repo | No | Would require a backend, which this project doesn't have |
 
-For local development: copy `config.example.js` → `config.js` and fill in values.
+For local development: copy `config.example.js` → `config.js` and `.firebaserc.example` → `.firebaserc`, then fill in values.
 
 ---
 
-## Firebase Security Rules
+## Firestore Security Rules
 
-```json
-{
-  "rules": {
-    "rooms": {
-      "$meetingId": {
-        ".read": true,
-        ".write": true
-      }
-    }
-  }
-}
-```
+See `firestore.rules` for the full rules file. Summary:
 
-Open read/write scoped to the `rooms` collection. Tighter per-participant
-rules were attempted but blocked the facilitator's `newRound()` operation
-(which resets the `votes` node directly). Full auth-based rules would require
-Firebase Authentication — out of scope for this project.
-
-The `meetingId` format (`spaces/xxxx`) is not easily guessable, providing
-implicit isolation between meetings.
+- Unauthenticated access: denied
+- Authenticated read: allowed on any room
+- Authenticated create: allowed with valid schema (all required fields, correct types)
+- Authenticated update: only own vote or full reset; schema re-validated
 
 ---
 
@@ -215,23 +234,4 @@ Without this line, all views render simultaneously.
 
 ## Manifest Reference
 
-```json
-{
-  "addOns": {
-    "common": {
-      "name": "Planning Poker",
-      "logoUrl": "https://maxmedina05.github.io/planning-poker-meet/assets/logo.png"
-    },
-    "meet": {
-      "web": {
-        "sidePanelUrl": "https://maxmedina05.github.io/planning-poker-meet/sidepanel/index.html",
-        "supportsScreenSharing": false,
-        "addOnOrigins": ["https://maxmedina05.github.io"],
-        "logoUrl": "https://maxmedina05.github.io/planning-poker-meet/assets/logo.png"
-      }
-    }
-  }
-}
-```
-
-`supportsScreenSharing: false` — voting is private per participant.
+See `deployment.json`. URLs point to Firebase Hosting after Phase C migration.

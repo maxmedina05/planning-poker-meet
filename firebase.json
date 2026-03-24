@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firestore.rules",
+      "firestore.indexes.json",
+      ".firebaserc",
+      ".github/**",
+      "docs/**",
+      "*.md",
+      "config.example.js",
+      "node_modules/**",
+      ".gitignore"
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "ALLOWALL" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" }
+        ]
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

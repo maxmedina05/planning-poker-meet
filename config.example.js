@@ -3,14 +3,14 @@
 // In CI, config.js is generated automatically from GitHub Actions secrets.
 //
 // NOTE: Firebase client config is intentionally public — security is enforced
-// via Firebase Security Rules, not by hiding these values.
+// via Firestore Security Rules + Anonymous Auth + App Check.
 
 const CONFIG = {
   cloudProjectNumber: 'YOUR_CLOUD_PROJECT_NUMBER',
+  recaptchaSiteKey: 'YOUR_RECAPTCHA_V3_SITE_KEY',  // Public site key only
   firebase: {
     apiKey: 'YOUR_API_KEY',
     authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    databaseURL: 'https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com',
     projectId: 'YOUR_PROJECT_ID',
     storageBucket: 'YOUR_PROJECT_ID.appspot.com',
     messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',

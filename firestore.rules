@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /rooms/{meetingId} {
+
+      // Any authenticated user can read a room
+      allow read: if request.auth != null;
+
+      // Room creation: any authenticated user can create with valid schema
+      allow create: if request.auth != null
+        && isValidRoom(request.resource.data);
+
+      // Room update: authenticated user, with field-level validation
+      allow update: if request.auth != null
+        && isValidRoom(request.resource.data)
+        && isValidUpdate(resource.data, request.resource.data);
+    }
+  }
+
+  // Validate the complete room document shape
+  function isValidRoom(data) {
+    return data.keys().hasAll(['hostId', 'storyTitle', 'revealed', 'votes', 'expiresAt'])
+      && data.hostId is string
+      && data.hostId.size() > 0
+      && data.hostId.size() <= 128
+      && data.storyTitle is string
+      && data.storyTitle.size() <= 120
+      && data.revealed is bool
+      && data.votes is map
+      && data.votes.size() <= 50
+      && data.expiresAt is timestamp;
+  }
+
+  // Validate what changed in an update
+  function isValidUpdate(before, after) {
+    let voteDiff    = after.votes.diff(before.votes);
+    let addedKeys   = voteDiff.addedKeys();
+    let changedKeys = voteDiff.changedKeys();
+    let removedKeys = voteDiff.removedKeys();
+
+    // Case 1: User is writing only their own vote
+    let isOwnVoteOnly =
+      addedKeys.union(changedKeys).hasOnly([request.auth.uid])
+      && removedKeys.size() == 0;
+
+    // Case 2: Full reset — votes map is cleared entirely
+    let isReset = after.votes.size() == 0;
+
+    return isOwnVoteOnly || isReset;
+  }
+}

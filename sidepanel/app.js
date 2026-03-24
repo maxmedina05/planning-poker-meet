@@ -26,13 +26,6 @@
   const resultsGrid  = document.getElementById('results-grid');
   const resultsStats = document.getElementById('results-stats');
 
-  // ── Participant identity ──────────────────────────────────────────────────
-  let myId = localStorage.getItem('poker_id');
-  if (!myId) {
-    myId = Math.random().toString(36).slice(2, 11);
-    localStorage.setItem('poker_id', myId);
-  }
-
   let confirmedCard = null;
   let selectedCard  = null;
   let isHost        = false;
@@ -64,7 +57,6 @@
   try {
     firebase.initializeApp(CONFIG.firebase);
     // App Check: cryptographically proves requests come from this app/domain.
-    // Requires RECAPTCHA_SITE_KEY secret and App Check enabled in Firebase Console.
     // If the key is absent (local dev without the secret), App Check is skipped.
     if (CONFIG.recaptchaSiteKey) {
       const appCheck = firebase.appCheck();
@@ -79,15 +71,56 @@
     return;
   }
 
-  const db         = firebase.database();
-  const roomRef    = db.ref('rooms/' + meetingId);
-  const hostRef    = roomRef.child('hostId');
-  const storyRef   = roomRef.child('storyTitle');
+  // ── Firebase emulator support (local dev only) ────────────────────────────
+  if (location.hostname === 'localhost') {
+    firebase.auth().useEmulator('http://localhost:9099');
+    firebase.firestore().useEmulator('localhost', 8080);
+  }
 
-  // ── Claim host: first writer wins ────────────────────────────────────────
-  hostRef.transaction(currentHostId => {
-    return currentHostId === null ? myId : undefined;
-  });
+  // ── Participant identity (Anonymous Auth) ──────────────────────────────────
+  let myId;
+  try {
+    const userCredential = await firebase.auth().signInAnonymously();
+    myId = userCredential.user.uid;
+    console.log('[PlanningPoker] Signed in anonymously:', myId);
+  } catch (err) {
+    loadingEl.textContent = 'Auth failed: ' + (err.message || String(err));
+    console.error('[PlanningPoker] Auth error:', err);
+    return;
+  }
+
+  // ── Firestore refs ────────────────────────────────────────────────────────
+  const db      = firebase.firestore();
+  const roomDoc = db.collection('rooms').doc(meetingId);
+
+  function ttl24h() {
+    return firebase.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+  }
+
+  // ── Claim host: first writer wins (atomic transaction) ────────────────────
+  async function claimHostIfEmpty() {
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(roomDoc);
+        if (!snap.exists) {
+          tx.set(roomDoc, {
+            hostId: myId,
+            storyTitle: '',
+            revealed: false,
+            votes: {},
+            expiresAt: ttl24h(),
+          });
+        } else if (!snap.data().hostId) {
+          tx.update(roomDoc, { hostId: myId, expiresAt: ttl24h() });
+        }
+        // If hostId already set, do nothing
+      });
+    } catch (err) {
+      console.error('[PlanningPoker] Host claim failed:', err);
+    }
+  }
+
+  await claimHostIfEmpty();
 
   // ── Render card grid ──────────────────────────────────────────────────────
   CARDS.forEach(value => {
@@ -111,10 +144,9 @@
   }
 
   function confirmVote() {
-    // Only write values that are valid card faces — reject anything else
     if (!CARDS.includes(selectedCard)) return;
     confirmedCard = selectedCard;
-    roomRef.child('votes/' + myId).set(confirmedCard);
+    roomDoc.update({ ['votes.' + myId]: confirmedCard, expiresAt: ttl24h() });
   }
 
   function changeVote() {
@@ -123,19 +155,18 @@
   }
 
   function revealVotes() {
-    roomRef.child('revealed').set(true);
+    roomDoc.update({ revealed: true, expiresAt: ttl24h() });
   }
 
   function newRound() {
     confirmedCard = null;
     selectedCard  = null;
-    // Preserve hostId and storyTitle across rounds
-    roomRef.update({ revealed: false, votes: {} });
+    roomDoc.update({ revealed: false, votes: {}, expiresAt: ttl24h() });
     showVotingView();
   }
 
   function claimHost() {
-    hostRef.set(myId);
+    roomDoc.update({ hostId: myId, expiresAt: ttl24h() });
   }
 
   confirmBtn.addEventListener('click', confirmVote);
@@ -144,9 +175,9 @@
   newRoundBtn.addEventListener('click', newRound);
   claimBtn.addEventListener('click', claimHost);
 
-  // Story title: update Firebase on blur (not on every keystroke)
+  // Story title: update Firestore on blur (not on every keystroke)
   storyInput.addEventListener('blur', () => {
-    storyRef.set(storyInput.value.trim());
+    roomDoc.update({ storyTitle: storyInput.value.trim(), expiresAt: ttl24h() });
   });
   // Also save on Enter key
   storyInput.addEventListener('keydown', e => {
@@ -154,8 +185,8 @@
   });
 
   // ── Real-time listener ────────────────────────────────────────────────────
-  roomRef.on('value', snapshot => {
-    const state    = snapshot.val() || {};
+  roomDoc.onSnapshot(snapshot => {
+    const state    = snapshot.exists ? snapshot.data() : {};
     const votes    = state.votes    || {};
     const hostId   = state.hostId   || null;
     const revealed = state.revealed || false;

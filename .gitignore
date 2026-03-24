@@ -14,7 +14,7 @@ service-account.json
 .env.*
 !.env.example
 
-# Firebase (if added later)
+# Firebase
 .firebaserc
 firebase-debug.log
 
