@@ -1,0 +1,16 @@
+{
+  "addOns": {
+    "common": {
+      "name": "Planning Poker",
+      "logoUrl": "https://YOUR_PROJECT_ID.web.app/assets/logo.png"
+    },
+    "meet": {
+      "web": {
+        "sidePanelUrl": "https://YOUR_PROJECT_ID.web.app/sidepanel/index.html",
+        "supportsScreenSharing": false,
+        "addOnOrigins": ["https://YOUR_PROJECT_ID.web.app"],
+        "logoUrl": "https://YOUR_PROJECT_ID.web.app/assets/logo.png"
+      }
+    }
+  }
+}
