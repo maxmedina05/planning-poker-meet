@@ -24,9 +24,9 @@ jobs:
         env:
           CLOUD_PROJECT_NUMBER: ${{ secrets.CLOUD_PROJECT_NUMBER }}
           FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
-          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+          RECAPTCHA_V3_SITE_KEY: ${{ secrets.RECAPTCHA_V3_SITE_KEY }}
         run: |
-          echo "const CONFIG = { cloudProjectNumber: '${CLOUD_PROJECT_NUMBER}', recaptchaSiteKey: '${RECAPTCHA_SITE_KEY}', firebase: ${FIREBASE_CONFIG} };" > config.js
+          echo "const CONFIG = { cloudProjectNumber: '${CLOUD_PROJECT_NUMBER}', recaptchaSiteKey: '${RECAPTCHA_V3_SITE_KEY}', firebase: ${FIREBASE_CONFIG} };" > config.js
           echo "config.js generated — $(wc -c < config.js) bytes"
 
       - name: Setup Pages
