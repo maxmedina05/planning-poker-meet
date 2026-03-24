@@ -6,10 +6,17 @@
       "firestore.rules",
       "firestore.indexes.json",
       ".firebaserc",
+      ".firebaserc.example",
       ".github/**",
       "docs/**",
       "*.md",
+      "config.js",
       "config.example.js",
+      ".env",
+      ".env.example",
+      "deploy.sh",
+      "*.sh",
+      "deployment.example.json",
       "node_modules/**",
       ".gitignore"
     ],
@@ -18,7 +25,9 @@
         "source": "**",
         "headers": [
           { "key": "X-Frame-Options", "value": "ALLOWALL" },
-          { "key": "X-Content-Type-Options", "value": "nosniff" }
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" }
         ]
       }
     ]

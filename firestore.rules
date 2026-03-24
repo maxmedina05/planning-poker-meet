@@ -35,7 +35,10 @@ service cloud.firestore {
       && data.revealed is bool
       && data.votes is map
       && data.votes.size() <= 50
-      && data.expiresAt is timestamp;
+      && data.expiresAt is timestamp
+      // expiresAt must be in the future and at most 25 hours out (prevents far-future abuse)
+      && data.expiresAt > request.time
+      && data.expiresAt <= request.time + duration.value(25, 'h');
   }
 
   // Validate what changed in an update
@@ -45,10 +48,11 @@ service cloud.firestore {
     let changedKeys = voteDiff.changedKeys();
     let removedKeys = voteDiff.removedKeys();
 
-    // Case 1: User is writing only their own vote
+    // Case 1: User is writing only their own vote, with a valid card value
     let isOwnVoteOnly =
       addedKeys.union(changedKeys).hasOnly([request.auth.uid])
-      && removedKeys.size() == 0;
+      && removedKeys.size() == 0
+      && after.votes[request.auth.uid] in ['0', '1', '2', '3', '5', '8', '13', '21', '?', '☕'];
 
     // Case 2: Full reset — votes map is cleared entirely
     let isReset = after.votes.size() == 0;
