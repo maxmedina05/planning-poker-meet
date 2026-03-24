@@ -17,7 +17,9 @@ service-account.json
 
 # Firebase
 .firebaserc
+.firebase/
 firebase-debug.log
+firestore-debug.log
 
 # --- Editor / OS noise ---
 .DS_Store
