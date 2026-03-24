@@ -90,8 +90,11 @@
   }
 
   // ── Firestore refs ────────────────────────────────────────────────────────
+  // meetingId from Meet SDK is e.g. "spaces/WEeCEZWSxF0B" — slashes are invalid
+  // in a Firestore document ID, so replace them with underscores.
   const db      = firebase.firestore();
-  const roomDoc = db.collection('rooms').doc(meetingId);
+  const roomId  = meetingId.replace(/\//g, '_');
+  const roomDoc = db.collection('rooms').doc(roomId);
 
   function ttl24h() {
     return firebase.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
