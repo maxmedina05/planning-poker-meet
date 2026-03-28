@@ -1,48 +1,34 @@
 # Deploy to Google Workspace Marketplace
-## Planning Poker — Staff Engineer Assessment
+## Planning Poker — Deployment Guide
 
-**Assessment date:** March 2026
-**Evaluator:** Staff-level readiness audit against live Google Workspace Marketplace documentation
-
----
-
-## Overall Verdict
-
-**NOT YET READY FOR PUBLIC LISTING — 7 specific gaps must be closed first.**
-
-The add-on itself is technically sound and architecturally correct. The blocking gaps are
-entirely in the Marketplace metadata, asset pipeline, and OAuth consent screen — none
-require code changes. With 2–4 hours of work and a 3–7 business day review wait, this
-app can be published to the public Marketplace.
-
-For an **immediate private (organization-only) listing**, only 3 gaps are blocking.
-For a **public listing**, all 7 gaps must be resolved.
+**Last updated:** March 2026
 
 ---
 
-## Gap Summary
+## Overall Status: READY — 3 manual steps remain
 
-| # | Gap | Blocks | Estimated effort |
-|---|-----|--------|-----------------|
-| G1 | OAuth consent screen is not configured or not set to "In production" | Public + Private | 10 min |
-| G2 | Terms of service URL is absent | Public + Private | 30 min (write a ToS page) |
-| G3 | `privacy.html` is gitignored — it is not committed and may not be deployed | Public + Private | 5 min (fix .gitignore) |
-| G4 | Store listing is not created (no app name, descriptions, or category filed) | Public + Private | 30 min |
-| G5 | No 128×128 icon prepared for Marketplace (logo.png is 1024×1024 — must be resized/exported) | Public | 10 min |
-| G6 | No 220×140 banner image exists | Public | 20 min |
-| G7 | No screenshots exist (min 1 required, 1280×800) | Public | 20 min |
+All code, assets, and configuration files are complete. The only remaining work
+is configuration inside Google Cloud Console and Firebase Console — no code changes needed.
 
-**No code changes are required.** The `deployment.json` manifest schema is correct and
-complete per the current REST API reference. The `privacy.html` content meets the
-substantive requirements — it just needs to be deployed.
+| What's done | What's left |
+|-------------|-------------|
+| ✅ `deployment.example.json` — correct Meet add-on schema | ⚠️ OAuth consent screen → set to "In production" |
+| ✅ `privacy.html` — live-ready with email placeholder | ⚠️ Firebase Console setup (Auth, App Check, TTL) |
+| ✅ `tos.html` — live-ready with email placeholder | ⚠️ Store Listing creation + asset upload |
+| ✅ `index.html` — homepage |  |
+| ✅ `assets/logo-128x128.png` — 128×128 icon |  |
+| ✅ `assets/banner-220x140.png` — 220×140 banner |  |
+| ✅ `assets/screenshot-1280x800.png` — 1280×800 screenshot |  |
+| ✅ `deploy.sh` — injects `CONTACT_EMAIL`, restores placeholders after deploy |  |
+| ✅ No credentials or personal info in any public file |  |
 
 ---
 
-## Section 1 — Manifest Assessment (`deployment.json`)
+## Section 1 — Manifest (`deployment.example.json`)
 
-### Verdict: PASSES with one note
-
-The current `deployment.json` is:
+The manifest schema is correct for the current Meet Add-on REST API. When you run
+`./deploy.sh`, it generates `deployment.json` (gitignored) from this template with your
+real project ID substituted in.
 
 ```json
 {
@@ -65,166 +51,130 @@ The current `deployment.json` is:
 }
 ```
 
-Against the current `projects.deployments` REST API reference, this satisfies all required
-fields:
-
 | Field | Required | Present | Value |
 |-------|----------|---------|-------|
-| `addOns.common.name` | Yes | Yes | "Planning Poker" |
-| `addOns.common.logoUrl` | Yes | Yes | Absolute HTTPS URL |
-| `addOns.meet.web.sidePanelUrl` | Yes | Yes | Absolute HTTPS URL |
-| `addOns.meet.web.addOnOrigins` | Yes | Yes | Matches hosting domain |
-| `addOns.meet.web.supportsScreenSharing` | No | Yes | false (correct for side-panel-only) |
+| `addOns.common.name` | Yes | ✅ | "Planning Poker" |
+| `addOns.common.logoUrl` | Yes | ✅ | Absolute HTTPS URL |
+| `addOns.meet.web.sidePanelUrl` | Yes | ✅ | Absolute HTTPS URL |
+| `addOns.meet.web.addOnOrigins` | Yes | ✅ | Matches hosting domain exactly |
+| `addOns.meet.web.supportsScreenSharing` | No | ✅ | `false` (correct for side-panel only) |
 
-**Note on `oauthScopes`:** The REST API schema includes a top-level `oauthScopes` array on
-the deployment resource. This app uses Firebase Anonymous Auth, not Google OAuth, so no
-Google OAuth scopes are needed. The array is correctly omitted. However, the OAuth consent
-screen must still be configured (see G1 below).
+**No `oauthScopes` needed** — this app uses Firebase Anonymous Auth, not Google OAuth.
+The OAuth consent screen must still be configured as a project-level identity record (see Section 2).
 
-**Optional fields not used** (from the REST API schema) that you may want to consider later:
-
-- `addOns.meet.web.supportsCollaboration` — for multi-user main stage (not applicable now)
-- `addOns.meet.web.supportsPopOut` — browser picture-in-picture support
+**Optional fields you may want later:**
 - `addOns.meet.web.darkModeLogoUrl` — dark theme logo variant
-- `addOns.meet.web.openState` — initial panel state (`SIDE_PANEL_ONLY` is the default and correct)
+- `addOns.meet.web.supportsCollaboration` — for multi-user main stage
+- `addOns.meet.web.supportsPopOut` — browser picture-in-picture support
 
-**One important note:** `deployment.json` is currently in `.gitignore`. It is generated
-locally from `deployment.example.json`. This is a sound security practice (the file
-contains your live project ID) but means the manifest must be re-submitted manually after
-each URL change. There is no automated manifest deployment path in the current `deploy.sh`.
-
-### Deployment type: Correct
-
-Meet add-ons **cannot be built in Apps Script** — they require a full web app. The
-architecture doc confirms this was a deliberate, well-researched decision. HTTP
-deployment via Firebase Hosting is the correct approach and is fully supported by
-the current Meet Add-ons platform. The Meet SDK is loaded from the correct CDN at
-version 1.1.0 (`https://www.gstatic.com/meetjs/addons/1.1.0/meet.addons.js`).
+**Note on re-submission:** `deployment.json` is gitignored and generated locally. The manifest
+must be re-submitted manually in the Cloud Console only when `sidePanelUrl` or the hosting
+domain changes. All JS/CSS/HTML updates deploy instantly via `./deploy.sh` with no
+Marketplace interaction required.
 
 ---
 
-## Section 2 — OAuth Consent Screen (G1 — BLOCKING)
+## Section 2 — Step 1: OAuth Consent Screen
 
-**Gap: The OAuth consent screen must be configured and set to "In production" before
-the app can pass review. If it remains "Testing" or unconfigured, the app will be
-rejected.**
+**Required for both private and public listings.**
 
-This is the single most common reason for Marketplace review rejection, per the
-official requirements documentation.
-
-### Why it matters even without Google OAuth
-
-Even though this app uses Firebase Anonymous Auth and requests zero Google OAuth scopes,
-the Google Workspace Marketplace requires every app to have a configured OAuth consent
-screen as a project-level identity record. The consent screen provides the app name, logo,
-support email, and privacy policy URL that appear in the Google Trust & Safety review.
+Even though this app uses no Google OAuth scopes, every Marketplace app needs a configured
+OAuth consent screen as its project-level identity record. It provides the app name, logo,
+and privacy policy URL to Google's Trust & Safety review. Leaving it as "Testing" is the
+single most common reason for Marketplace rejection.
 
 ### Steps
 
 1. Go to: https://console.cloud.google.com/apis/credentials/consent
-2. Select project `YOUR_PROJECT_ID`
-3. If not configured, choose **External** user type and click **Create**
+2. Select your project
+3. If not yet configured, choose **External** → click **Create**
 4. Fill in:
-   - **App name:** `Planning Poker` (must match your Marketplace listing name exactly)
+   - **App name:** `Planning Poker` (must match the Marketplace listing name exactly)
    - **User support email:** your email
-   - **App logo:** upload a 120×120 PNG (cropped from your existing 1024×1024 logo)
-   - **Application home page:** your Firebase Hosting URL
+   - **App logo:** `assets/logo-128x128.png` (128×128 — use this exact file)
+   - **Application home page:** `https://YOUR_PROJECT_ID.web.app`
    - **Privacy policy link:** `https://YOUR_PROJECT_ID.web.app/privacy.html`
-   - **Terms of service link:** your ToS URL (see G2 below)
+   - **Terms of service link:** `https://YOUR_PROJECT_ID.web.app/tos.html`
    - **Developer contact email:** your email
-5. On the **Scopes** step: click **Save and Continue** without adding any scopes
-6. On the **Test users** step: add any accounts you use for testing, then **Save and Continue**
-7. Back on the summary page, click **Publish App** to move to **In production**
+5. **Scopes** step → click **Save and Continue** without adding anything
+6. **Test users** step → add your test accounts → **Save and Continue**
+7. Back on the summary page → click **Publish App** → confirm
 
-**Critical:** The publishing status must be **In production** before Marketplace submission.
-Leaving it as **Testing** is a guaranteed rejection.
+The status must show **In production** before submission.
 
 ---
 
-## Section 3 — Privacy Policy (G3 — BLOCKING)
+## Section 3 — Step 2: Firebase Console Setup
 
-**Gap: `privacy.html` is listed in `.gitignore` and will not be deployed unless it exists
-locally. The file itself has good content, but the deployment pipeline does not guarantee
-it is present.**
+These settings cannot be configured from code — they must be set in the Firebase Console.
 
-### Content assessment: PASSES
+### 3a. Enable Anonymous Authentication
 
-The `privacy.html` content covers all required elements for a Marketplace listing:
+1. Firebase Console → **Build → Authentication → Sign-in method**
+2. Click **Anonymous** → toggle **Enable** → **Save**
 
-- What is collected (anonymous UID, votes, story title)
-- What is NOT collected (name, email, Google account identity)
-- Data storage and auto-deletion timeline (24 hours via Firestore TTL)
-- No third-party data sharing
-- Third-party services disclosed (Firebase, reCAPTCHA)
-- Contact email for privacy questions
+### 3b. Enable and Enforce App Check
 
-### Fix required
+App Check blocks unauthorized clients from accessing Firestore.
 
-Remove `privacy.html` from `.gitignore`:
+1. Firebase Console → **Build → App Check**
+2. Click your web app → select **reCAPTCHA v3** as provider
+3. Enter your reCAPTCHA **Site Key** (from `.env`)
+4. Click **Save**
+5. Click **Enforce** — without this, App Check logs but does not block
 
-```
-# In .gitignore, delete or comment out this line:
-privacy.html
-```
+### 3c. Set TTL Policy on `expiresAt`
 
-Then commit and deploy:
+Auto-deletes room documents after 24 hours so old data never accumulates.
+
+1. Firebase Console → **Build → Firestore Database → Indexes tab**
+2. Click **TTL policies → Add TTL policy**
+3. Collection: `rooms` · Field: `expiresAt`
+4. Click **Save**
+
+---
+
+## Section 4 — Step 3: Store Listing
+
+### 4a. Run `./deploy.sh` first
+
+The privacy policy and ToS pages must be live before you can submit URLs in the Store Listing form.
 
 ```bash
-git add privacy.html
-git commit -m "deploy: add privacy policy page"
 ./deploy.sh
+
+# Verify pages are live before continuing
+curl -I https://YOUR_PROJECT_ID.web.app/privacy.html   # expect HTTP 200
+curl -I https://YOUR_PROJECT_ID.web.app/tos.html       # expect HTTP 200
 ```
 
-After deployment, verify the page is live:
-```
-https://YOUR_PROJECT_ID.web.app/privacy.html
-```
+### 4b. Create the listing
 
----
+1. Go to: https://console.cloud.google.com/apis/googleworkspace/marketplace
+2. Navigate to: **Google Workspace Marketplace SDK → Store Listing tab**
 
-## Section 4 — Terms of Service (G2 — BLOCKING)
+### 4c. Required fields
 
-**Gap: The Store Listing requires a Terms of Service URL. No ToS page exists in the repo.**
-
-A ToS for a no-cost personal-use add-on can be minimal. It must be a live URL. Create
-`tos.html` at the Firebase Hosting root (same pattern as `privacy.html`) and include:
-
-- The service is provided as-is with no warranties
-- You may discontinue the service at any time
-- Users are responsible for their use of the add-on
-- Governing law (your jurisdiction)
-- Contact email
-
-After creating, deploy it and add the URL `https://YOUR_PROJECT_ID.web.app/tos.html`
-to both the OAuth consent screen and the Marketplace Store Listing.
-
----
-
-## Section 5 — Store Listing (G4 — BLOCKING)
-
-**Gap: No Store Listing has been created. This is a required step before submission.**
-
-### Console location
-
-https://console.cloud.google.com/apis/googleworkspace/marketplace/appid
-
-Navigate to: **Google Workspace Marketplace SDK > Store Listing tab**
-
-### Required fields and constraints
-
-| Field | Requirement | Recommended value |
-|-------|-------------|-------------------|
-| App name | Max 50 chars; no "Google" trademark; no version numbers | `Planning Poker` |
-| Short description | Max 200 chars | `Estimate story points in real time during Google Meet calls. Vote with Fibonacci cards, reveal together, and track averages — without leaving the call.` |
-| Detailed description | Under 16,000 chars; cannot be identical to short description | See template below |
+| Field | Requirement | Value to use |
+|-------|-------------|--------------|
+| App name | Max 50 chars, no "Google" trademark | `Planning Poker` |
+| Short description | Max 200 chars | See template below |
+| Detailed description | Under 16,000 chars | See template below |
 | Category | Select one | `Productivity` |
-| Support URL | Must be functional | Your GitHub repo URL or a support page |
-| Privacy policy URL | Required, must be live | `https://YOUR_PROJECT_ID.web.app/privacy.html` |
-| Terms of service URL | Required, must be live | `https://YOUR_PROJECT_ID.web.app/tos.html` |
+| Support URL | Must be functional | Your GitHub repo URL |
+| Privacy policy URL | Must be live | `https://YOUR_PROJECT_ID.web.app/privacy.html` |
+| Terms of service URL | Must be live | `https://YOUR_PROJECT_ID.web.app/tos.html` |
 | Pricing | Select one | `Free` |
 
-### Detailed description template (customize before use)
+### 4d. Description templates
 
+**Short description (≤ 200 chars):**
+```
+Estimate story points in real time during Google Meet calls. Vote with Fibonacci
+cards, reveal together, and track averages — without leaving the call.
+```
+
+**Detailed description:**
 ```
 Planning Poker is a lightweight agile estimation tool built directly into
 Google Meet. Run story point estimation sessions without context-switching
@@ -243,7 +193,7 @@ HOW IT WORKS
 FEATURES
 - 10-card Fibonacci deck including ? (unsure) and ☕ (needs a break)
 - Live vote count updates as participants submit
-- Results sorted with average and min/max range
+- Results sorted with average, min, and max range
 - Optional story title set by the Facilitator
 - Any participant can claim the Facilitator role if the host leaves
 - Start New Round resets votes while preserving the story title
@@ -251,344 +201,138 @@ FEATURES
 - Data auto-deleted after 24 hours of inactivity
 
 PRIVACY
-No names, emails, or Google account information are collected.
-Each session uses an anonymous ID that is automatically deleted after the
-meeting. Full privacy policy at:
-https://YOUR_PROJECT_ID.web.app/privacy.html
+No names, emails, or Google account information are collected. Each session
+uses an anonymous ID that is automatically deleted after the meeting.
+Full privacy policy at: https://YOUR_PROJECT_ID.web.app/privacy.html
 ```
 
+### 4e. Upload graphic assets
+
+All assets are in `assets/` — use the resized versions:
+
+| Asset | File | Dimensions |
+|-------|------|------------|
+| App icon | `assets/logo-128x128.png` | 128×128 |
+| App card banner | `assets/banner-220x140.png` | 220×140 |
+| Screenshot | `assets/screenshot-1280x800.png` | 1280×800 |
+
+### 4f. Register the HTTP deployment
+
+1. In the Marketplace SDK console → **HTTP Deployments tab**
+2. Click **Create new deployment**
+3. Paste the contents of your local `deployment.json` (the generated file with real URLs)
+4. Click **Save**
+
 ---
 
-## Section 6 — Required Graphic Assets (G5, G6, G7 — BLOCKING FOR PUBLIC LISTING)
+## Section 5 — Publication Options
 
-**Gap: The current repo has only `assets/logo.png` (1024×1024 PNG). Multiple additional
-assets are required for the Marketplace listing, and existing assets must be exported at
-specific dimensions.**
+### Option A — Private listing (immediate, no review)
 
-### Full asset checklist
+Best for personal + work use. Available only to your Google Workspace organization.
 
-| Asset | Required dimensions | Current status | Action needed |
-|-------|--------------------|--------------|--------------:|
-| App icon (primary) | 128×128 PNG | Missing (only 1024×1024 exists) | Export/resize from logo.png |
-| App icon (small) | 32×32 PNG | Missing | Export/resize from logo.png |
-| App icon (web, large) | 96×96 PNG | Missing | Export/resize from logo.png |
-| App icon (web, small) | 48×48 PNG | Missing | Export/resize from logo.png |
-| App Card Banner | 220×140 PNG | Missing | Create new graphic |
-| Screenshots | 1280×800 PNG (min 1, max 5) | Missing | Take screenshots in Meet |
-| Screenshots (alt sizes) | 640×400 or 2560×1600 | Optional | — |
-| OAuth consent screen logo | 120×120 PNG | Missing | Export/resize from logo.png |
+1. Complete Sections 2, 3, and 4
+2. In Marketplace SDK → **App Visibility** → select **Private**
+3. Under **Installation settings**, choose individual or admin install
+4. Click **Publish** — live immediately, no review queue
 
-**Icon requirements from official docs:**
-- Square corners
-- Transparent background acceptable
-- Color image (not grayscale)
-- Must accurately represent functionality
-- Cannot include Google trademarks (no "G", Meet, or Google logos)
-- Must be legible at small sizes
+**Note:** Public/private cannot be changed after publication.
 
-**Screenshot requirements from official docs:**
-- "Square corners and no padding (full bleed)"
-- Must show the actual add-on UI working inside Google Meet
-- High quality only — low-quality screenshots are a rejection reason
-- Recommended: show the voting view and the results view
+### Option B — Public listing (worldwide, requires review)
 
-### Resizing commands using ImageMagick
+1. Complete Sections 2, 3, and 4
+2. Confirm OAuth consent screen status is **In production**
+3. In Marketplace SDK → **App Visibility** → select **Public**
+4. Click **Publish** → enters the review queue
+5. Review typically takes 3–7 business days
+
+---
+
+## Section 6 — Submitting the Deployment via CLI (optional)
+
+If you prefer the command line over the Cloud Console UI:
 
 ```bash
-# Install ImageMagick if needed: sudo apt-get install imagemagick
-
-SOURCE="assets/logo.png"
-
-# Icons for Marketplace
-convert "$SOURCE" -resize 128x128 assets/icon-128.png
-convert "$SOURCE" -resize 96x96  assets/icon-96.png
-convert "$SOURCE" -resize 48x48  assets/icon-48.png
-convert "$SOURCE" -resize 32x32  assets/icon-32.png
-
-# OAuth consent screen logo
-convert "$SOURCE" -resize 120x120 assets/icon-120.png
-```
-
-The banner (220×140) must be created as a new graphic — it is a landscape layout that
-shows the app name and a brief tagline, not just a scaled logo. Create it in any design
-tool and export as PNG.
-
----
-
-## Section 7 — Meet Add-on Specific Requirements from Official Docs
-
-The official Marketplace review documentation includes the following **Meet-specific
-review criteria** that this app must satisfy:
-
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| Must function with third-party cookies disabled | PASS | Uses Firebase Anonymous Auth with `signInAnonymously()` — no third-party cookies required |
-| Responsive design required for variable side panel sizes | PASS | Side panel uses CSS flexible layout |
-| No horizontal scrolling within iframes | PASS | No horizontal overflow in current CSS |
-| One Tap sign-in integration required | UNKNOWN | See note below |
-| Main stage: multiplayer experiences required | N/A | Side panel only, no main stage used |
-
-**One Tap sign-in note:** The requirement for "One Tap sign-in integration" in the
-official review criteria is ambiguous for anonymous-auth apps. This likely refers to
-Google One Tap for apps that use Google accounts. Since this app uses Firebase Anonymous
-Auth (no Google account identity), this requirement likely does not apply. However, if
-a reviewer flags it, the response is: "The add-on uses Firebase Anonymous Authentication
-and does not collect or process any Google account identity. One Tap sign-in is not
-applicable."
-
-**Third-party cookies:** This is the most technically significant Meet-specific
-requirement. Verify it explicitly: with Chrome's third-party cookie blocking enabled
-(chrome://settings/cookies → "Block third-party cookies"), open the add-on in a real
-Meet session and confirm all functionality works normally.
-
----
-
-## Section 8 — Publication Flow
-
-### Option A — Private listing (domain/organization only)
-
-A private listing is available immediately without Google review. Use this for internal
-team use or while iterating before public launch.
-
-**Private listing characteristics:**
-- Only visible to your Google Workspace organization members
-- Publishes immediately (no review queue)
-- Accessible at `https://workspace.google.com/marketplace/` only to your org
-- Domain admins can deploy it org-wide from the Admin Console
-- **WARNING:** The public/private choice cannot be changed after publication
-
-**Steps for private listing:**
-
-1. Complete G1 (OAuth consent screen) — required even for private listings
-2. Complete G3 (deploy `privacy.html`) — required even for private listings
-3. Complete G4 (create Store Listing) — required even for private listings
-4. In the Marketplace SDK console, under **App Visibility**, select **Private**
-5. Under **Installation settings**, choose who can install:
-   - Individual users install themselves, OR
-   - Administrator installs for the whole domain
-6. Click **Publish** — the listing is immediately available to your org
-
-### Option B — Public listing (all Google users worldwide)
-
-Public listing requires completing all 7 gaps and passing Google review.
-
-**Steps for public listing:**
-
-1. Complete all gaps G1 through G7 (see Section 9 for the ordered checklist)
-2. In the Marketplace SDK console, under **App Visibility**, select **Public**
-3. Under **Installation settings**, select **Individual + Admin install**
-4. Confirm the **OAuth consent screen** is set to **In production**
-5. Fill in all Store Listing fields and upload all graphic assets
-6. Click **Publish** — this enters the review queue
-
-**Review timeline:** Several business days (Google's documentation says "typically
-several days" — in practice 3–7 business days for a new submission).
-
-**After review:**
-- Approval: App appears in public Marketplace search results
-- Rejection: You receive an email with specific reasons; fix and resubmit
-
-### Option C — Unlisted (URL install only)
-
-Not explicitly a Marketplace listing type, but you can keep the HTTP deployment installed
-via the Cloud Console's "HTTP Deployments" tab without any Marketplace listing. Users must
-be sent the direct install link. This is how the current dev deployment works.
-
----
-
-## Section 9 — Complete Pre-Submission Checklist (Ordered)
-
-Complete in this exact order:
-
-### Phase 1 — Deploy prerequisites (30 minutes)
-
-- [ ] **Remove `privacy.html` from `.gitignore`**
-  ```bash
-  # Edit .gitignore: delete the line that reads: privacy.html
-  git add .gitignore privacy.html
-  git commit -m "fix: track privacy.html in git"
-  ```
-
-- [ ] **Create `tos.html`** (Terms of Service page)
-  Pattern it after `privacy.html`. Deploy alongside it.
-  ```bash
-  # After creating tos.html:
-  git add tos.html
-  git commit -m "feat: add terms of service page"
-  ./deploy.sh
-  ```
-
-- [ ] **Verify both pages are live**
-  ```bash
-  curl -I https://YOUR_PROJECT_ID.web.app/privacy.html
-  curl -I https://YOUR_PROJECT_ID.web.app/tos.html
-  # Both should return HTTP 200
-  ```
-
-### Phase 2 — OAuth consent screen (10 minutes)
-
-- [ ] Go to https://console.cloud.google.com/apis/credentials/consent
-- [ ] Select project `YOUR_PROJECT_ID`
-- [ ] Configure External app with all required fields (see Section 2)
-- [ ] Set status to **In production**
-
-### Phase 3 — Create image assets (30–60 minutes)
-
-- [ ] Export icons from `assets/logo.png` (1024×1024 source):
-  - `assets/icon-128.png` — 128×128
-  - `assets/icon-96.png` — 96×96
-  - `assets/icon-48.png` — 48×48
-  - `assets/icon-32.png` — 32×32
-  - `assets/icon-120.png` — 120×120 (for OAuth consent screen)
-- [ ] Create `assets/banner-220x140.png` — 220×140 landscape banner
-- [ ] Take 1–5 screenshots at 1280×800 inside a real Google Meet session
-  - Screenshot 1: voting view (card grid visible, pick a card)
-  - Screenshot 2: results view (votes revealed, average and range shown)
-
-### Phase 4 — Store Listing (30 minutes)
-
-- [ ] Go to: https://console.cloud.google.com/apis/googleworkspace/marketplace/appid
-- [ ] Navigate to the **Store Listing** tab
-- [ ] Fill in all required fields (see Section 5)
-- [ ] Upload all icon assets and at least 1 screenshot
-- [ ] Upload the 220×140 banner
-
-### Phase 5 — Submit
-
-For **private listing:**
-- [ ] Set visibility to **Private** and click **Publish**
-- Done — available to your org immediately
-
-For **public listing:**
-- [ ] Set visibility to **Public**
-- [ ] Confirm OAuth consent screen status is **In production**
-- [ ] Click **Publish**
-- [ ] Wait 3–7 business days for review
-
----
-
-## Section 10 — gcloud CLI Commands
-
-All the steps above can be completed in the Cloud Console UI, but here are the equivalent
-CLI commands for the deployment lifecycle:
-
-```bash
-# Authenticate
+# Authenticate and set project
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 
-# Create or replace the HTTP deployment
+# Create or replace the HTTP deployment (uses your generated deployment.json)
 gcloud workspace-add-ons deployments replace-deployment \
   --deployment-id=planning-poker-production \
   --body=deployment.json
 
-# Check deployment status
-gcloud workspace-add-ons deployments get planning-poker-production
-
-# Install the deployment for your account (for testing)
+# Install for your own account (for testing)
 gcloud workspace-add-ons deployments install planning-poker-production
 
-# List all deployments
-gcloud workspace-add-ons deployments list
+# Check status
+gcloud workspace-add-ons deployments get planning-poker-production
 ```
 
-**Note:** The `gcloud workspace-add-ons` commands require the Google Cloud SDK with the
-`gcloud alpha` or `gcloud beta` component. If the command group is not found:
+If `gcloud workspace-add-ons` is not found:
 ```bash
 gcloud components install alpha
-# or
-gcloud components install beta
 ```
 
-The REST API endpoint for programmatic deployment management is:
-`POST https://gsuiteaddons.googleapis.com/v1/projects/{projectNumber}/deployments`
-with IAM permission `gsuiteaddons.deployments.create` and OAuth scope
-`https://www.googleapis.com/auth/cloud-platform`.
+---
+
+## Section 7 — Meet-Specific Review Criteria
+
+| Requirement | Status |
+|-------------|--------|
+| Works with third-party cookies disabled | ✅ Firebase Anonymous Auth — no third-party cookies |
+| Responsive side panel layout | ✅ CSS flex layout, no fixed widths |
+| No horizontal scrolling in iframe | ✅ No horizontal overflow |
+| Loading state shown while connecting | ✅ "Connecting to meeting…" shown on init |
+| No Google trademark use in name/logo | ✅ "Planning Poker", no Google branding |
+| No duplicate of built-in Google functionality | ✅ Planning poker is not a Google product |
+| App fully implemented (not beta) | ✅ All listed features work |
+
+**One Tap sign-in:** If a reviewer flags this, the correct response is: *"The add-on uses
+Firebase Anonymous Authentication and does not collect or process any Google account
+identity. One Tap sign-in is not applicable."*
 
 ---
 
-## Section 11 — Common Rejection Reasons and How This App Compares
+## Section 8 — Post-Publication Update Policy
 
-Based on the official Marketplace review requirements documentation:
-
-| Rejection reason | This app's status |
-|-----------------|-------------------|
-| OAuth consent screen set to "Testing" | RISK — must be set to "In production" before submission (G1) |
-| Non-functional URLs in listing | RISK — ToS URL does not exist yet (G2); privacy URL may not be deployed (G3) |
-| Inappropriate use of Google trademarks in name/logo | PASS — name is "Planning Poker", no Google branding used |
-| App name over 50 characters | PASS — "Planning Poker" is 14 characters |
-| Short and detailed descriptions are identical | PASS if you use different text (template in Section 5 provides both) |
-| Low-quality or missing screenshots | RISK — no screenshots exist yet (G7) |
-| Obvious bugs or broken functionality | PASS — core features are complete and tested |
-| App in beta/testing status | PASS — all features listed in README are fully implemented |
-| Authorization required multiple times | PASS — Firebase Anonymous Auth persists across reloads |
-| Third-party cookies dependency | INVESTIGATE — verify explicitly with cookie blocking enabled |
-| Horizontal scrolling in iframe | PASS — no horizontal overflow in side panel |
-| Missing privacy policy | RISK — `privacy.html` is gitignored (G3) |
-| Missing Terms of Service | FAIL — does not exist yet (G2) |
-| Missing loading indicators | PASS — loading state shows "Connecting to meeting..." |
-| Broken image links | PASS if logo is deployed; verify after `./deploy.sh` |
-| Duplicate functionality of Google products | PASS — planning poker is not a Google product |
-| No new functionality beyond built-in Workspace features | PASS — real-time collaborative voting is a novel capability |
+| Change type | Requires re-review | How to deploy |
+|-------------|-------------------|---------------|
+| Bug fixes, JS/CSS/HTML changes | No | `./deploy.sh` — live immediately |
+| New features at same URLs | No | `./deploy.sh` — live immediately |
+| Change `sidePanelUrl` or hosting domain | Yes | Update `deployment.json`, resubmit in Cloud Console |
+| Change app name or short description | Yes | Update Store Listing, resubmit |
+| Update logo or screenshots | Yes | Update Store Listing assets, resubmit |
+| Add Google OAuth scopes | Yes | Full re-review |
+| Update privacy policy content | No | `./deploy.sh` — live immediately |
 
 ---
 
-## Section 12 — Console and Admin Pages Quick Reference
+## Section 9 — Console Quick Reference
 
 | Purpose | URL |
 |---------|-----|
-| Google Cloud Console — project home | https://console.cloud.google.com/home/dashboard?project=YOUR_PROJECT_ID |
+| Google Cloud Console | https://console.cloud.google.com/home/dashboard?project=YOUR_PROJECT_ID |
 | OAuth consent screen | https://console.cloud.google.com/apis/credentials/consent?project=YOUR_PROJECT_ID |
 | Marketplace SDK — App Configuration | https://console.cloud.google.com/apis/api/appsmarket-component.googleapis.com/googleapps?project=YOUR_PROJECT_ID |
 | Marketplace SDK — Store Listing | https://console.cloud.google.com/apis/googleworkspace/marketplace?project=YOUR_PROJECT_ID |
 | Marketplace SDK — HTTP Deployments | https://console.cloud.google.com/apis/googleworkspace/marketplace/deployments?project=YOUR_PROJECT_ID |
-| Firebase Console — project | https://console.firebase.google.com/project/YOUR_PROJECT_ID |
+| Firebase Console | https://console.firebase.google.com/project/YOUR_PROJECT_ID |
 | Firebase App Check | https://console.firebase.google.com/project/YOUR_PROJECT_ID/appcheck |
 | Firebase Authentication | https://console.firebase.google.com/project/YOUR_PROJECT_ID/authentication |
 | Firestore Database | https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore |
 | reCAPTCHA Admin | https://www.google.com/recaptcha/admin |
-| Google Workspace Admin (domain install) | https://admin.google.com |
 
 ---
 
-## Section 13 — Official Documentation Links
+## Section 10 — Official Documentation
 
-The following URLs were tested during this assessment. Pages that returned 404 are marked.
-
-| Topic | URL | Status |
-|-------|-----|--------|
-| Meet Add-ons overview | https://developers.google.com/workspace/add-ons/meet/overview | 404 — URL has changed |
-| Meet Add-ons deploy guide | https://developers.google.com/workspace/add-ons/meet/deploy | 404 — URL has changed |
-| Workspace Add-ons alternate runtimes (HTTP) | https://developers.google.com/workspace/add-ons/guides/alternate-runtimes | AVAILABLE |
-| Deployment REST API schema | https://developers.google.com/workspace/add-ons/reference/rest/v1/projects.deployments | AVAILABLE |
-| Deployment CREATE endpoint | https://developers.google.com/workspace/add-ons/reference/rest/v1/projects.deployments/create | AVAILABLE |
-| How to publish (Marketplace) | https://developers.google.com/workspace/marketplace/how-to-publish | AVAILABLE |
-| Marketplace requirements | https://developers.google.com/workspace/marketplace/requirements | AVAILABLE |
-| Create a listing | https://developers.google.com/workspace/marketplace/create-listing | AVAILABLE |
-| Submit for review | https://developers.google.com/workspace/marketplace/submit-for-review | 404 — URL has changed |
-| Privacy policy guidance | https://developers.google.com/workspace/marketplace/about-listing-privacy | 404 — URL has changed |
-
-**Recommended alternative entry points for current documentation:**
-- https://developers.google.com/workspace/add-ons/overview
-- https://developers.google.com/workspace/marketplace
-
----
-
-## Section 14 — Post-Publication Update Policy
-
-Once published, understanding what triggers re-review is critical:
-
-| Change type | Requires re-review? | Action |
-|-------------|--------------------|-|
-| Bug fixes, JS/CSS changes with same URLs | No | `./deploy.sh` — live immediately |
-| New features at same URLs | No | `./deploy.sh` — live immediately |
-| Version bump (`VERSION` in `app.js`) | No | `./deploy.sh` — live immediately |
-| Change `sidePanelUrl` or hosting domain | Yes | Update `deployment.json`, resubmit manifest in Cloud Console |
-| Change app name or short description | Yes | Update Store Listing, resubmit |
-| Update logo or screenshots | Yes | Update Store Listing assets, resubmit |
-| Add Google OAuth scopes | Yes | Update OAuth consent screen + Store Listing, full re-review |
-| Change privacy policy content | No | Deploy updated `privacy.html` directly |
-
-**Key architectural advantage:** Because all logic is in static files on Firebase Hosting
-and the manifest only points to a URL (not a code snapshot), all non-manifest changes are
-live immediately after `./deploy.sh` with zero Marketplace interaction.
+| Topic | URL |
+|-------|-----|
+| Workspace Add-ons overview | https://developers.google.com/workspace/add-ons/overview |
+| Add-ons alternate runtimes (HTTP) | https://developers.google.com/workspace/add-ons/guides/alternate-runtimes |
+| Deployment REST API schema | https://developers.google.com/workspace/add-ons/reference/rest/v1/projects.deployments |
+| How to publish (Marketplace) | https://developers.google.com/workspace/marketplace/how-to-publish |
+| Marketplace requirements | https://developers.google.com/workspace/marketplace/requirements |
+| Create a listing | https://developers.google.com/workspace/marketplace/create-listing |
+| Marketplace overview | https://developers.google.com/workspace/marketplace |
