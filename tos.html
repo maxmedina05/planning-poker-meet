@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms of Service — Planning Poker</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 680px;
+        margin: 48px auto;
+        padding: 0 24px;
+        color: #1f1f1f;
+        line-height: 1.7;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 4px;
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin-top: 2rem;
+      }
+      .updated {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+      }
+      ul {
+        padding-left: 1.4rem;
+      }
+      a {
+        color: #1a73e8;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated: March 2026</p>
+
+    <p>
+      Planning Poker is a free Google Meet add-on that helps teams estimate
+      story points collaboratively during meetings. These terms govern your use
+      of the add-on. By installing or using Planning Poker, you agree to them.
+    </p>
+
+    <h2>1. Acceptance of terms</h2>
+    <p>
+      By opening or using the Planning Poker add-on inside Google Meet, you
+      agree to these Terms of Service. If you do not agree, simply do not use
+      the add-on. No account, registration, or signature is required — use
+      constitutes acceptance.
+    </p>
+
+    <h2>2. Description of the service</h2>
+    <p>
+      Planning Poker runs as a side-panel add-on within Google Meet. It lets
+      meeting participants vote on story point estimates using a standard
+      Fibonacci-style card deck (0, 1, 2, 3, 5, 8, 13, 21, ?, and a coffee
+      break card). The first participant to open the panel becomes the
+      facilitator and can set a story title, reveal votes, and start new
+      rounds. Any participant can claim the facilitator role if the original
+      facilitator leaves.
+    </p>
+    <p>
+      The add-on is provided free of charge for personal and professional use.
+      There are no paid tiers, subscriptions, or premium features.
+    </p>
+
+    <h2>3. No account or registration required</h2>
+    <p>
+      Planning Poker does not require you to create an account or provide any
+      personal information. When you open the add-on, Firebase Anonymous
+      Authentication assigns you a randomly generated session ID that contains
+      no personal details and is not linked to your Google account or identity
+      in any way.
+    </p>
+
+    <h2>4. Acceptable use</h2>
+    <p>
+      You may use Planning Poker for any lawful purpose. You agree not to:
+    </p>
+    <ul>
+      <li>Attempt to disrupt, overload, or interfere with the service's infrastructure</li>
+      <li>Reverse-engineer, scrape, or abuse the Firestore database or Firebase endpoints</li>
+      <li>Use the add-on to transmit spam, malware, or any harmful content through story titles or vote values</li>
+      <li>Misrepresent your affiliation with this add-on or impersonate its developer</li>
+    </ul>
+    <p>
+      In practice, this is a simple card-voting tool. Reasonable use is expected
+      and the rules above exist only to cover clear misuse.
+    </p>
+
+    <h2>5. Data handling</h2>
+    <p>
+      Planning Poker collects minimal data. During a session, your anonymous ID,
+      card vote, and any story title entered by the facilitator are stored
+      temporarily in Google Cloud Firestore. All session data is automatically
+      deleted 24 hours after the last activity via a Firestore TTL policy. No
+      personal information is ever collected, and no data is sold or shared with
+      third parties.
+    </p>
+    <p>
+      For full details, see the <a href="/privacy.html">Privacy Policy</a>.
+    </p>
+
+    <h2>6. No warranties</h2>
+    <p>
+      Planning Poker is provided "as is" and "as available" without warranties
+      of any kind, express or implied. The developer makes no guarantees about
+      uptime, accuracy, fitness for a particular purpose, or uninterrupted
+      access. The add-on depends on Google Meet, Firebase, and Google Cloud
+      infrastructure — outages or changes in those platforms may affect
+      availability at any time.
+    </p>
+    <p>
+      This is a free, independently maintained tool. Use it accordingly.
+    </p>
+
+    <h2>7. Limitation of liability</h2>
+    <p>
+      To the maximum extent permitted by applicable law, the developer of
+      Planning Poker shall not be liable for any indirect, incidental, special,
+      or consequential damages arising from your use of or inability to use the
+      add-on, including but not limited to loss of data, missed estimates, or
+      disrupted meetings. Your sole remedy for dissatisfaction with the add-on
+      is to stop using it.
+    </p>
+
+    <h2>8. Availability and termination</h2>
+    <p>
+      The developer may modify, suspend, or discontinue Planning Poker at any
+      time without prior notice. You may stop using the add-on at any time by
+      removing it from your Google Meet settings. Because no account is created,
+      there is nothing further to delete or cancel. Any temporary session data
+      associated with your anonymous ID will be automatically removed within 24
+      hours.
+    </p>
+
+    <h2>9. Third-party services</h2>
+    <p>
+      Planning Poker relies on Google Meet (for the add-on platform), Firebase
+      (for anonymous authentication and Firestore database), and Google
+      reCAPTCHA v3 (for bot protection via App Check). Your use of those
+      services is subject to Google's own terms and policies. The developer of
+      Planning Poker has no control over and takes no responsibility for changes
+      to those services.
+    </p>
+
+    <h2>10. Changes to these terms</h2>
+    <p>
+      These terms may be updated from time to time. The "Last updated" date at
+      the top of this page will reflect any changes. Continued use of the
+      add-on after an update constitutes acceptance of the revised terms.
+      Changes will not be applied retroactively in a way that materially harms
+      users.
+    </p>
+
+    <h2>11. Governing law</h2>
+    <p>
+      These terms are governed by the laws of the jurisdiction in which the
+      developer resides, without regard to conflict-of-law principles. Any
+      disputes arising from use of this add-on should be raised informally via
+      the contact address below before pursuing formal proceedings.
+    </p>
+
+    <h2>12. Contact</h2>
+    <p>
+      Questions about these terms can be sent to:
+      <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>
+    </p>
+  </body>
+</html>

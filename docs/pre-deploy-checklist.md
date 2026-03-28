@@ -12,7 +12,7 @@ rotate them now as a precaution.
 
 ### 1a. Rotate Firebase API Key
 1. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
-2. Select your project (`planning-poker-meet-491015`)
+2. Select your project (`YOUR_PROJECT_ID`)
 3. Find the **Browser key** under "API keys"
 4. Click **Regenerate key**
 5. Copy the new key
@@ -96,7 +96,7 @@ Without this, old room documents accumulate forever and cost money.
 
 ### 3a. Register the Workspace Add-on manifest
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Select project `planning-poker-meet-491015`
+2. Select project `YOUR_PROJECT_ID`
 3. Left sidebar: **APIs & Services → Google Workspace Marketplace SDK**
    - If not listed, search for it and click **Enable**
 4. Click **App Configuration** tab
@@ -104,7 +104,7 @@ Without this, old room documents accumulate forever and cost money.
    - App name: `Planning Poker`
    - App description: `Agile planning poker for your Google Meet`
    - App icon: upload your logo (128×128 PNG)
-   - Privacy policy URL: `https://planning-poker-meet-491015.web.app/privacy.html`
+   - Privacy policy URL: `https://YOUR_PROJECT_ID.web.app/privacy.html`
 6. Click **Store Listing** tab → fill in screenshots and description
 7. Click **OAuth scopes** tab → no scopes needed (add-on uses Firebase Auth, not Google OAuth)
 8. Click **HTTP Deployments** tab
@@ -161,7 +161,7 @@ cat .env
 
 # 3. Verify the live site loads (not via direct browser — it will show the
 #    "Open inside Google Meet" message, which is correct)
-open https://planning-poker-meet-491015.web.app/sidepanel/index.html
+open https://YOUR_PROJECT_ID.web.app/sidepanel/index.html
 
 # 4. Test inside a real Google Meet
 #    - Start or join a meeting

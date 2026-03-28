@@ -28,6 +28,7 @@ REQUIRED=(
   FIREBASE_STORAGE_BUCKET
   FIREBASE_MESSAGING_SENDER_ID
   FIREBASE_APP_ID
+  CONTACT_EMAIL
 )
 
 for var in "${REQUIRED[@]}"; do
@@ -63,6 +64,17 @@ cat > .firebaserc << EOF
 }
 EOF
 echo "✓ .firebaserc generated"
+
+# ── Inject contact email into HTML templates ──────────────────────────────────
+# Replaces {{CONTACT_EMAIL}} placeholder in public HTML files before deploy,
+# then restores the placeholders so the repo files stay clean.
+HTML_FILES=(privacy.html tos.html)
+trap 'git restore "${HTML_FILES[@]}" 2>/dev/null || true' EXIT
+
+for f in "${HTML_FILES[@]}"; do
+  sed -i "s/{{CONTACT_EMAIL}}/${CONTACT_EMAIL}/g" "$f"
+done
+echo "✓ Contact email injected into HTML"
 
 # ── Deploy ────────────────────────────────────────────────────────────────────
 echo "Deploying to Firebase project: ${FIREBASE_PROJECT_ID}"
