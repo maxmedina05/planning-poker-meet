@@ -29,3 +29,4 @@ firestore-debug.log
 Thumbs.db
 .vscode/settings.json
 *.swp
+google*.html
