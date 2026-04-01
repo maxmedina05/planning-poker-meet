@@ -10,7 +10,6 @@
       ".github/**",
       "docs/**",
       "*.md",
-      "config.js",
       "config.example.js",
       ".env",
       ".env.example",
