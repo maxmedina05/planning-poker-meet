@@ -6,8 +6,8 @@ Issues from rejection email for app **Planning Poker (611068490382)**.
 
 ## 1. Fix Manifest / Integration not showing in Marketplace SDK
 
-- [ ] Read the manifest documentation: https://developers.google.com/workspace/add-ons/concepts/workspace-manifests
-- [ ] Verify `deployment.json` has all required fields (e.g. `oauthScopes`)
+- [x] Read the manifest documentation: https://developers.google.com/workspace/add-ons/concepts/workspace-manifests
+- [x] Added missing top-level `oauthScopes` field to `deployment.json` (required for Meet integration to appear)
 - [ ] In Google Cloud Console → Workspace Add-ons API → HTTP Deployments, resubmit the manifest
 - [ ] Confirm the **Meet** host option appears when configuring the Deployment ID in the Marketplace SDK
 - [ ] If still broken, file a bug at https://developers.google.com/workspace/add-ons/gsuite-support#bugs
