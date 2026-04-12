@@ -1,4 +1,7 @@
 {
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+  ],
   "addOns": {
     "common": {
       "name": "Planning Poker",
